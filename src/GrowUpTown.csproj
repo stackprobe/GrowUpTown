@@ -9,6 +9,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Raylib-cs" Version="7.0.2" />
-    <EmbeddedResource Include="Game.cs;City.cs" />
+    <EmbeddedResource Include="Game.cs;City.cs;TownNeeds.cs" />
   </ItemGroup>
 </Project>

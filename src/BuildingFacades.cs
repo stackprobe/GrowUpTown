@@ -13,7 +13,7 @@ internal sealed class BuildingFacades : IDisposable
     private static readonly Vector3[] Normals = [Vector3.UnitZ, Vector3.UnitX, -Vector3.UnitZ, -Vector3.UnitX];
     private static readonly Vector3[] Across = [Vector3.UnitX, -Vector3.UnitZ, -Vector3.UnitX, Vector3.UnitZ];
 
-    internal static float FloorHeight(TileKind kind) => kind switch { TileKind.Home => .52f, TileKind.Shop => .70f, _ => .55f };
+    internal static float FloorHeight(TileKind kind) => kind switch { TileKind.UltraCity => .90f, TileKind.SuperHome => 1.02f, TileKind.SuperIndustryCommerce => .70f, TileKind.SuperMixed => .72f, TileKind.SuperFactory => .65f, TileKind.Home => .52f, TileKind.Shop => .70f, _ => .55f };
     internal static float Height(Tile tile) => FloorHeight(tile.Kind) * tile.Level;
 
     internal BuildingFacades()
@@ -41,22 +41,49 @@ internal sealed class BuildingFacades : IDisposable
             if (Vector3.Dot(Normals[face], towardCamera) <= 0) continue;
             byte shade = face switch { 0 => 255, 1 => 226, 2 => 237, _ => 218 };
             Rlgl.Color4ub(shade, shade, shade, 255);
-            Vector3 across = Across[face] * .34f;
             foreach (var chunk in chunks)
             foreach (var (cell, tile) in chunk.Cells)
             {
-                if (!FacadeStyles.IsBuilding(tile.Kind)) continue;
-                int x = chunk.Position.OriginX - originX + cell % City.Size;
-                int z = chunk.Position.OriginZ - originZ + cell / City.Size;
+                if (!tile.IsAnchor || !FacadeStyles.IsBuilding(tile.Kind)) continue;
+                if (tile.Kind == TileKind.SuperHome) continue; // Glass tower geometry is drawn in Game.
+                if (tile.Kind == TileKind.UltraCity)
+                {
+                    float ux = chunk.Position.OriginX - originX + cell % City.Size + 1;
+                    float uz = chunk.Position.OriginZ - originZ + cell / City.Size + 1;
+                    for (int floor = 0; floor < tile.Level; floor++)
+                    {
+                        float start = -1.16f;
+                        for (int panel = 0; panel < 3; panel++)
+                        {
+                            float width = UltraAppearance.PanelWidth(tile, face, panel);
+                            int category = UltraAppearance.Category(tile, face, panel);
+                            int style = UltraAppearance.Style(tile, floor, face, panel);
+                            Vector3 center = new Vector3(ux, .12f + floor * FloorHeight(tile.Kind), uz)
+                                + Normals[face] * 1.162f + Across[face] * (start + width / 2);
+                            DrawPanel(category * 32 + (floor == 0 ? 16 : 0) + style, center,
+                                Across[face] * (width / 2 - .012f), FloorHeight(tile.Kind));
+                            start += width;
+                        }
+                    }
+                    continue;
+                }
+                bool large = City.Footprint(tile.Kind) == 2;
+                float halfWidth = large ? .84f : .34f;
+                Vector3 across = Across[face] * halfWidth;
+                float x = chunk.Position.OriginX - originX + cell % City.Size + (large ? .5f : 0);
+                float z = chunk.Position.OriginZ - originZ + cell / City.Size + (large ? .5f : 0);
                 float story = FloorHeight(tile.Kind);
                 for (int floor = 0; floor < tile.Level; floor++)
                 {
-                    int index = ((int)tile.Kind - (int)TileKind.Home) * 32 + (floor == 0 ? 16 : 0) + tile.FaceStyles[floor * 4 + face];
+                    int category = tile.Kind == TileKind.SuperMixed && floor == 0 ? 1 : FacadeStyles.Category(tile.Kind);
+                    // Storefront and distribution offices face south; production occupies the other faces.
+                    if (tile.Kind == TileKind.SuperIndustryCommerce && (face == 0 || face == 1 && floor == 0)) category = 1;
+                    int index = category * 32 + (floor == 0 ? 16 : 0) + tile.FaceStyles[floor * 4 + face];
                     float u0 = (index % Columns * Cell + Inset) / (float)(Columns * Cell);
                     float v0 = (index / Columns * Cell + Inset) / (float)(Rows * Cell);
                     float u1 = u0 + ArtSize / (float)(Columns * Cell);
                     float v1 = v0 + ArtSize / (float)(Rows * Cell);
-                    Vector3 center = new Vector3(x, .09f + floor * story, z) + Normals[face] * .341f;
+                    Vector3 center = new Vector3(x, .09f + floor * story, z) + Normals[face] * (halfWidth + .001f);
                     Vector3 left = center - across, right = center + across;
                     // Counter-clockwise viewed from outside; image origin is top-left.
                     Rlgl.TexCoord2f(u0, v1); Rlgl.Vertex3f(left.X, left.Y, left.Z);
@@ -71,6 +98,19 @@ internal sealed class BuildingFacades : IDisposable
     }
 
     public void Dispose() => UnloadTexture(atlas);
+
+    private static void DrawPanel(int index, Vector3 center, Vector3 across, float height)
+    {
+        float u0 = (index % Columns * Cell + Inset) / (float)(Columns * Cell);
+        float v0 = (index / Columns * Cell + Inset) / (float)(Rows * Cell);
+        float u1 = u0 + ArtSize / (float)(Columns * Cell);
+        float v1 = v0 + ArtSize / (float)(Rows * Cell);
+        Vector3 left = center - across, right = center + across;
+        Rlgl.TexCoord2f(u0, v1); Rlgl.Vertex3f(left.X, left.Y, left.Z);
+        Rlgl.TexCoord2f(u1, v1); Rlgl.Vertex3f(right.X, right.Y, right.Z);
+        Rlgl.TexCoord2f(u1, v0); Rlgl.Vertex3f(right.X, right.Y + height, right.Z);
+        Rlgl.TexCoord2f(u0, v0); Rlgl.Vertex3f(left.X, left.Y + height, left.Z);
+    }
 
     private sealed class Painter(Image image, int cellX, int cellY)
     {

@@ -18,15 +18,16 @@ internal static class FacadeStyles
          Setting.Street, Setting.Industry, Setting.Dense, Setting.Open, Setting.Street, Setting.Industry, Setting.Green, Setting.Open]
     ];
 
-    internal static bool IsBuilding(TileKind kind) => kind is TileKind.Home or TileKind.Shop or TileKind.Factory;
+    internal static bool IsBuilding(TileKind kind) => kind is TileKind.Home or TileKind.Shop or TileKind.Factory or TileKind.SuperMixed or TileKind.SuperFactory or TileKind.SuperIndustryCommerce or TileKind.SuperHome or TileKind.UltraCity;
+    internal static int Category(TileKind kind) => kind switch { TileKind.SuperMixed or TileKind.SuperHome or TileKind.UltraCity => 0, TileKind.SuperFactory or TileKind.SuperIndustryCommerce => 2, _ => (int)kind - (int)TileKind.Home };
     internal static bool IsValid(Tile tile) => tile.FaceStyles is not null
-        && tile.FaceStyles.Length == (IsBuilding(tile.Kind) ? tile.Level * 4 : 0)
+        && tile.FaceStyles.Length == (tile.IsAnchor && IsBuilding(tile.Kind) ? tile.Level * 4 : 0)
         && tile.FaceStyles.All(id => id >= 0 && id < Count);
 
     internal static void CompleteFloors(City city, int x, int z, int? builtMonth = null)
     {
         Tile tile = city[x, z];
-        if (!IsBuilding(tile.Kind) || tile.FaceStyles.Length == tile.Level * 4) return;
+        if (!tile.IsAnchor || !IsBuilding(tile.Kind) || tile.FaceStyles.Length == tile.Level * 4) return;
         int[] usage = city.AppearanceUsage(tile.Kind);
         var styles = tile.FaceStyles.ToList();
         for (int index = styles.Count; index < tile.Level * 4; index++)
@@ -40,7 +41,7 @@ internal static class FacadeStyles
                 // Hard balancing keeps even a homogeneous neighborhood varied.
                 if (usage[id] != minimum) continue;
                 double score = Noise(city.AppearanceSeed, x, z, builtMonth ?? city.Month, index, id);
-                if ((Affinities[(int)tile.Kind - (int)TileKind.Home][id] & setting) != 0) score += .65;
+                if ((Affinities[Category(tile.Kind)][id] & setting) != 0) score += .65;
                 if (styles.Skip(floor * 4).Contains(id)) score -= 2;
                 if (floor > 0 && styles[index - 4] == id) score -= .8;
                 if (score > bestScore) { bestScore = score; best = id; }

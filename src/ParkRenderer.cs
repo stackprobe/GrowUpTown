@@ -9,20 +9,23 @@ internal readonly record struct ParkLayout(int Connections, int Style, int Rotat
 internal static class ParkRenderer
 {
     internal const int StyleCount = 6;
+    private static readonly (int X, int Z)[] Directions = [(0, 1), (1, 0), (0, -1), (-1, 0)];
     private static readonly Color Grass = new(107, 166, 115, 255), Path = new(223, 210, 170, 255);
     private static readonly Color Wood = new(159, 117, 73, 255), Stone = new(185, 195, 180, 255);
 
-    // Derived appearance needs no new save fields. Only the four park neighbors can
-    // change an existing layout; every single addition/removal changes its style.
+    // Roads extend walkways but leave the park's existing decorations unchanged.
     internal static ParkLayout Layout(City city, int x, int z)
     {
-        int mask = (city[x, z + 1].Kind == TileKind.Park ? 1 : 0)
-            | (city[x + 1, z].Kind == TileKind.Park ? 2 : 0)
-            | (city[x, z - 1].Kind == TileKind.Park ? 4 : 0)
-            | (city[x - 1, z].Kind == TileKind.Park ? 8 : 0);
+        int mask = 0, parkMask = 0;
+        for (int arm = 0; arm < Directions.Length; arm++)
+        {
+            TileKind kind = city[x + Directions[arm].X, z + Directions[arm].Z].Kind;
+            if (City.IsPark(kind)) parkMask |= 1 << arm;
+            if (City.IsPark(kind) || kind == TileKind.Road) mask |= 1 << arm;
+        }
         uint seed = unchecked((uint)x * 73856093u ^ (uint)z * 19349663u ^ (uint)city.AppearanceSeed);
         seed ^= seed >> 16;
-        return new(mask, (int)(seed % StyleCount + (uint)BitOperations.PopCount((uint)mask)) % StyleCount,
+        return new(mask, (int)(seed % StyleCount + (uint)BitOperations.PopCount((uint)parkMask)) % StyleCount,
             (int)((seed >> 8) % 4));
     }
 

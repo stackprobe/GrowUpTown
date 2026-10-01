@@ -2,15 +2,28 @@ using System.Text.Json;
 
 namespace GrowUpTown;
 
-public enum TileKind { Empty, Road, Home, Shop, Factory, Park, Bulldoze, Water }
+public enum TileKind { Empty, Road, Home, Shop, Factory, Park, Bulldoze, Water, SuperMixed, SuperFactory, SuperIndustryCommerce, SuperHome, UltraCity, GrandPark, Supermarket, LogisticsCenter }
 public sealed class Tile
 {
     public TileKind Kind { get; set; }
     public int Level { get; set; } = 1;
     public int Residents { get; set; }
+    public int LogisticsStyle { get; set; }
+    public int LogisticsRotation { get; set; }
+    public bool LogisticsAccess { get; set; }
+    public int MarketStyle { get; set; }
+    public int MarketRotation { get; set; }
+    // Cached service state; preserved during cold-chunk compression, recomputed on load/edits.
+    public bool MarketAccess { get; set; }
+    public int ParkStyle { get; set; }
+    public int ParkRotation { get; set; }
     public int Growth { get; set; }
     public bool Connected { get; set; }
     public int Comfort { get; set; }
+    public int OffsetX { get; set; }
+    public int OffsetZ { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsAnchor => OffsetX == 0 && OffsetZ == 0;
     // Four faces per completed floor: +Z, +X, -Z, -X.
     public int[] FaceStyles { get; set; } = [];
 }
@@ -18,7 +31,7 @@ public sealed class Tile
 public sealed class City
 {
     public const int Size = 24;
-    public const long LandPrice = 1_000_000;
+    public long LandPrice => 1_000_000L + (chunks.Count - 1L) * 500_000L;
     public const int DistantUpdateInterval = 12;
     public const int MaxChunkCoordinate = int.MaxValue / Size - 4;
     private readonly SortedDictionary<ChunkPos, WorldChunk> chunks = new();
@@ -46,8 +59,32 @@ public sealed class City
     public long Workers => Population * 55 / 100;
     public long Employed => Math.Min(Workers, Jobs);
     public long Balance => LastIncome - LastExpense;
-    public static int Cost(TileKind kind) => kind switch { TileKind.Road => 60, TileKind.Home => 420, TileKind.Shop => 650, TileKind.Factory => 900, TileKind.Park => 280, TileKind.Water => 280, TileKind.Bulldoze => 40, _ => 0 };
-    public static string Name(TileKind kind) => kind switch { TileKind.Road => "道路", TileKind.Home => "住宅", TileKind.Shop => "商業地", TileKind.Factory => "工業地", TileKind.Park => "公園", TileKind.Water => "水域", TileKind.Bulldoze => "撤去", _ => "空き地" };
+    public static int Cost(TileKind kind) => kind switch { TileKind.LogisticsCenter => 8400, TileKind.Supermarket => 7200, TileKind.GrandPark => 5600, TileKind.UltraCity => 18000, TileKind.SuperHome => 4800, TileKind.SuperIndustryCommerce => 6200, TileKind.SuperMixed => 4280, TileKind.SuperFactory => 3600, TileKind.Road => 60, TileKind.Home => 420, TileKind.Shop => 650, TileKind.Factory => 900, TileKind.Park => 280, TileKind.Water => 280, TileKind.Bulldoze => 40, _ => 0 };
+    public static string Name(TileKind kind) => kind switch { TileKind.LogisticsCenter => "物流センター", TileKind.Supermarket => "スーパーマーケット", TileKind.GrandPark => "大公園", TileKind.UltraCity => "ultra住宅地＆商業地＆工業地", TileKind.SuperHome => "super住宅地", TileKind.SuperIndustryCommerce => "super工業商業地", TileKind.SuperMixed => "super住宅商業地", TileKind.SuperFactory => "super工業地", TileKind.Road => "道路", TileKind.Home => "住宅", TileKind.Shop => "商業地", TileKind.Factory => "工業地", TileKind.Park => "公園", TileKind.Water => "水域", TileKind.Bulldoze => "撤去", _ => "空き地" };
+    public static int Footprint(TileKind kind) => kind is TileKind.GrandPark or TileKind.Supermarket or TileKind.LogisticsCenter ? 4 : kind == TileKind.UltraCity ? 3 : kind is TileKind.SuperHome or TileKind.SuperMixed or TileKind.SuperFactory or TileKind.SuperIndustryCommerce ? 2 : 1;
+    public static int MaxLevel(TileKind kind) => kind is TileKind.GrandPark or TileKind.Supermarket or TileKind.LogisticsCenter ? 1 : kind == TileKind.UltraCity ? 9 : Footprint(kind) == 2 ? 6 : 3;
+    public static bool HasHomes(TileKind kind) => kind is TileKind.Home or TileKind.SuperMixed or TileKind.SuperHome or TileKind.UltraCity;
+    public static int Housing(Tile tile) => tile.Level * (tile.Kind == TileKind.UltraCity ? 432 : tile.Kind == TileKind.SuperHome ? 192 : tile.Kind == TileKind.SuperMixed ? 96 : tile.Kind == TileKind.Home ? 24 : 0);
+    public static int UnlockYear(TileKind kind) => kind switch
+    {
+        TileKind.SuperMixed or TileKind.SuperFactory or TileKind.SuperIndustryCommerce or TileKind.SuperHome => 5,
+        TileKind.UltraCity => 10,
+        TileKind.GrandPark or TileKind.Supermarket or TileKind.LogisticsCenter => 15,
+        _ => 1
+    };
+    public bool IsUnlocked(TileKind kind) => (Month - 1) / 12 + 1 >= UnlockYear(kind);
+    public bool SpecialsUnlocked => IsUnlocked(TileKind.GrandPark);
+    public static bool IsPark(TileKind kind) => kind is TileKind.Park or TileKind.GrandPark;
+    public (int X, int Z) AnchorAt(int x, int z) => (x - this[x, z].OffsetX, z - this[x, z].OffsetZ);
+    public Tile BuildingAt(int x, int z) { var p = AnchorAt(x, z); return this[p.X, p.Z]; }
+    public bool CanBuild(int x, int z, TileKind kind)
+    {
+        if (kind is < TileKind.Road or > TileKind.LogisticsCenter || !IsUnlocked(kind) || Money < Cost(kind) || !Inside(x, z)) return false;
+        if (kind == TileKind.Bulldoze) return this[x, z].Kind != TileKind.Empty;
+        for (int dz = 0; dz < Footprint(kind); dz++) for (int dx = 0; dx < Footprint(kind); dx++)
+            if (!Inside(x + dx, z + dz) || (this[x + dx, z + dz].Kind != TileKind.Empty && !(kind == TileKind.Road && this[x + dx, z + dz].Kind == TileKind.Water))) return false;
+        return true;
+    }
     public bool Inside(int x, int z) => chunks.ContainsKey(ChunkPos.FromTile(x, z));
     // 1: east/west deck, 2: north/south deck. Recomputed when neighbors change.
     public int BridgeAxis(int x, int z)
@@ -99,11 +136,11 @@ public sealed class City
             foreach (var (index, tile) in chunk.Cells)
                 yield return (chunk.Position.OriginX + index % Size, chunk.Position.OriginZ + index / Size, tile);
     }
-    internal int[] AppearanceUsage(TileKind kind) => (int[])appearanceUsage[(int)kind - (int)TileKind.Home].Clone();
+    internal int[] AppearanceUsage(TileKind kind) => (int[])appearanceUsage[FacadeStyles.Category(kind)].Clone();
     internal void RegisterFaces(TileKind kind, IEnumerable<int> ids, int sign = 1)
     {
         if (!FacadeStyles.IsBuilding(kind)) return;
-        foreach (int id in ids) appearanceUsage[(int)kind - (int)TileKind.Home][id] += sign;
+        foreach (int id in ids) appearanceUsage[FacadeStyles.Category(kind)][id] += sign;
     }
     public bool CanPurchase(ChunkPos key) => Math.Abs((long)key.X) <= MaxChunkCoordinate && Math.Abs((long)key.Z) <= MaxChunkCoordinate
         && !chunks.ContainsKey(key) && (chunks.ContainsKey(new(key.X - 1, key.Z)) || chunks.ContainsKey(new(key.X + 1, key.Z))
@@ -111,11 +148,12 @@ public sealed class City
     public string Purchase(ChunkPos key)
     {
         if (!CanPurchase(key)) return "所有地の上下左右に接する土地を選んでください";
-        if (Money < LandPrice) return "土地の購入には ¥1,000,000 が必要です";
-        Money -= LandPrice;
+        long price = LandPrice;
+        if (Money < price) return $"土地の購入には ¥{price:N0} が必要です";
+        Money -= price;
         chunks.Add(key, new(key, Month));
         InvalidateTerrain(key.OriginX, key.OriginZ, Size);
-        return $"土地 [{key.X}, {key.Z}] を購入しました（24×24 / ¥1,000,000）";
+        return $"土地 [{key.X}, {key.Z}] を購入しました（24×24 / ¥{price:N0}）";
     }
     public void Reconnect()
     {
@@ -131,27 +169,56 @@ public sealed class City
                 tile.Connected = true;
                 if (tile.Kind == TileKind.Road) queue.Enqueue(n);
             }
+        // Walkways carry access only between parks, never into another road network
+        // or into residential/business buildings. Grand parks participate via all cells.
         foreach (var (x, z, tile) in placed)
-            if (tile.Kind == TileKind.Home) tile.Comfort = LocalComfort(x, z);
+            if (IsPark(tile.Kind) && tile.Connected) queue.Enqueue((x, z));
+        while (queue.TryDequeue(out var park))
+            foreach (var next in Neighbors(park.x, park.z))
+            {
+                var tile = this[next.x, next.z];
+                if (!IsPark(tile.Kind) || tile.Connected) continue;
+                tile.Connected = true;
+                queue.Enqueue(next);
+            }
+        foreach (var (x, z, tile) in placed)
+            if (!tile.IsAnchor && tile.Connected) BuildingAt(x, z).Connected = true;
+        foreach (var (x, z, tile) in placed)
+        {
+            if (!tile.IsAnchor) tile.Connected = BuildingAt(x, z).Connected;
+            if (tile.IsAnchor && HasHomes(tile.Kind)) tile.Comfort = LocalComfort(x, z);
+            if (tile.IsAnchor) tile.MarketAccess = CommercialTaxBase(tile) > 0 && HasMarketService(x, z);
+            if (tile.IsAnchor) tile.LogisticsAccess = CommercialTaxBase(tile) + IndustrialTaxBase(tile) > 0 && HasLogisticsService(x, z);
+        }
         foreach (var chunk in chunks.Values) chunk.Recount();
     }
     public string Build(int x, int z, TileKind kind)
     {
+        if (!IsUnlocked(kind)) return $"この項目は{UnlockYear(kind)}年1月に解放されます";
         if (!Inside(x, z)) return "未購入の土地には建設できません";
         var tile = this[x, z];
-        if (kind is < TileKind.Road or > TileKind.Water) return "建設する種類を選択してください";
+        if (kind is < TileKind.Road or > TileKind.LogisticsCenter) return "建設する種類を選択してください";
         if (kind == TileKind.Bulldoze && tile.Kind == TileKind.Empty) return "ここは空き地です";
         if (kind != TileKind.Bulldoze && tile.Kind != TileKind.Empty && !(kind == TileKind.Road && tile.Kind == TileKind.Water)) return "既存の建物を先に撤去してください";
         if (Money < Cost(kind)) return "資金が足りません。税収を待つか、支出を見直しましょう";
+        if (!CanBuild(x, z, kind)) return $"建設には所有地内の空いた{Footprint(kind)}×{Footprint(kind)}マスが必要です";
         SynchronizeAll();
+        if (kind == TileKind.Bulldoze) (x, z) = AnchorAt(x, z);
         tile = this[x, z];
         RegisterFaces(tile.Kind, tile.FaceStyles, -1);
         Money -= Cost(kind);
-        var key = ChunkPos.FromTile(x, z);
-        int index = LocalIndex(key, x, z);
-        if (kind == TileKind.Bulldoze) chunks[key].Cells.Remove(index);
-        else chunks[key].Cells[index] = new Tile { Kind = kind };
-        InvalidateTerrain(x, z, 2);
+        int size = Footprint(kind == TileKind.Bulldoze ? tile.Kind : kind);
+        for (int dz = 0; dz < size; dz++) for (int dx = 0; dx < size; dx++)
+        {
+            var key = ChunkPos.FromTile(x + dx, z + dz);
+            int index = LocalIndex(key, x + dx, z + dz);
+            if (kind == TileKind.Bulldoze) chunks[key].Cells.Remove(index);
+            else chunks[key].Cells[index] = new Tile { Kind = kind, OffsetX = dx, OffsetZ = dz };
+        }
+        if (kind == TileKind.GrandPark) GrandParkAppearance.Assign(this, x, z);
+        if (kind == TileKind.Supermarket) SupermarketAppearance.Assign(this, x, z);
+        if (kind == TileKind.LogisticsCenter) LogisticsAppearance.Assign(this, x, z);
+        InvalidateTerrain(x, z, Math.Max(3, size));
         Reconnect();
         FacadeStyles.CompleteFloors(this, x, z);
         bool connected = this[x, z].Connected;
@@ -165,11 +232,51 @@ public sealed class City
         {
             if (Math.Abs(dx) + Math.Abs(dz) > 3) continue;
             var t = this[x + dx, z + dz];
-            if (t.Kind == TileKind.Park && t.Connected) value += 10;
+            if (t.Kind == TileKind.Park) value += t.Connected ? 10 : 3;
             if (t.Kind == TileKind.Water) value += 10;
-            if (t.Kind == TileKind.Factory) value -= 14;
+            if (t.Kind is TileKind.Factory or TileKind.SuperFactory or TileKind.SuperIndustryCommerce) value -= 14;
         }
+        // Count each park once, measuring from the entire residential footprint.
+        int homeSize = HasHomes(this[x, z].Kind) ? Footprint(this[x, z].Kind) : 1;
+        var parks = new HashSet<(int, int)>();
+        for (int dz = -5; dz < homeSize + 5; dz++) for (int dx = -5; dx < homeSize + 5; dx++)
+        {
+            int distance = Math.Max(0, Math.Max(-dx, dx - homeSize + 1)) + Math.Max(0, Math.Max(-dz, dz - homeSize + 1));
+            if (distance > 5 || this[x + dx, z + dz].Kind != TileKind.GrandPark) continue;
+            var anchor = AnchorAt(x + dx, z + dz);
+            if (parks.Add(anchor)) value += this[anchor.X, anchor.Z].Connected ? 20 : 6;
+        }
+        if (HasMarketService(x, z)) value += 10;
         return Math.Clamp(value, -35, 25);
+    }
+    // Commercial portion only: mixed-use industrial tax is never boosted.
+    internal static int CommercialTaxBase(Tile tile) => tile.Level * (tile.Kind switch
+    {
+        TileKind.Shop => 100,
+        TileKind.SuperMixed or TileKind.SuperIndustryCommerce => 400,
+        TileKind.UltraCity => 600,
+        _ => 0
+    });
+    internal static int IndustrialTaxBase(Tile tile) => tile.Level * (tile.Kind switch
+    {
+        TileKind.Factory => 160,
+        TileKind.SuperFactory or TileKind.SuperIndustryCommerce => 640,
+        TileKind.UltraCity => 960,
+        _ => 0
+    });
+    public bool HasMarketService(int x, int z) => HasService(x, z, TileKind.Supermarket);
+    public bool HasLogisticsService(int x, int z) => HasService(x, z, TileKind.LogisticsCenter);
+    private bool HasService(int x, int z, TileKind source)
+    {
+        (x, z) = AnchorAt(x, z);
+        int size = Footprint(this[x, z].Kind);
+        for (int dz = -5; dz < size + 5; dz++) for (int dx = -5; dx < size + 5; dx++)
+        {
+            int distance = Math.Max(0, Math.Max(-dx, dx - size + 1)) + Math.Max(0, Math.Max(-dz, dz - size + 1));
+            if (distance <= 5 && this[x + dx, z + dz].Kind == source
+                && BuildingAt(x + dx, z + dz).Connected) return true;
+        }
+        return false;
     }
     private void InvalidateTerrain(int x, int z, int radius)
     {
@@ -193,18 +300,19 @@ public sealed class City
         for (int month = chunk.LastSimulatedMonth + 1; month <= throughMonth; month++)
             foreach (var (index, tile) in chunk.Cells)
             {
+                if (!tile.IsAnchor) continue;
                 int before = tile.Residents;
-                if (tile.Kind == TileKind.Home)
+                if (HasHomes(tile.Kind))
                 {
                     if (!tile.Connected || conditions.Happiness < 40 || tile.Comfort <= -28) tile.Residents = Math.Max(0, tile.Residents - 4);
                     else if (conditions.Population < conditions.Target)
-                        tile.Residents += (int)Math.Max(0, Math.Min(Math.Min(4, conditions.Target - conditions.Population), tile.Level * 24 - tile.Residents));
+                        tile.Residents += (int)Math.Max(0, Math.Min(Math.Min(tile.Kind == TileKind.UltraCity ? 72 : tile.Kind == TileKind.SuperHome ? 32 : tile.Kind == TileKind.SuperMixed ? 16 : 4, conditions.Target - conditions.Population), Housing(tile) - tile.Residents));
                     else if (conditions.Population > conditions.Target + 8) tile.Residents = Math.Max(0, tile.Residents - 2);
                 }
                 conditions.Population += tile.Residents - before;
                 if (!FacadeStyles.IsBuilding(tile.Kind)) continue;
-                bool viable = tile.Connected && conditions.Happiness >= 60 && (tile.Kind == TileKind.Home ? tile.Residents >= tile.Level * 20 : conditions.BusinessViable);
-                tile.Growth = viable && tile.Level < 3 ? tile.Growth + 1 : 0;
+                bool viable = tile.Connected && conditions.Happiness >= 60 && (HasHomes(tile.Kind) ? tile.Residents >= Housing(tile) * 5 / 6 : conditions.BusinessViable);
+                tile.Growth = viable && tile.Level < MaxLevel(tile.Kind) ? tile.Growth + 1 : 0;
                 if (tile.Growth >= 6)
                 {
                     tile.Level++; tile.Growth = 0;
@@ -284,10 +392,22 @@ public sealed class City
             if (!city.chunks.TryAdd(key, chunk)) throw new InvalidDataException("区画が重複しています");
             foreach (var (index, t) in record.Cells)
             {
-                if (index < 0 || index >= Size * Size || t is null || t.Kind < TileKind.Road || (t.Kind > TileKind.Water || t.Kind == TileKind.Bulldoze) || t.Level < 1 || t.Level > 3 || t.Residents < 0 || t.Residents > t.Level * 24 || (t.Kind != TileKind.Home && t.Residents != 0) || t.Growth < 0 || t.Growth >= 6 || !FacadeStyles.IsValid(t))
+                if (index < 0 || index >= Size * Size || t is null || t.Kind < TileKind.Road || (t.Kind > TileKind.LogisticsCenter || t.Kind == TileKind.Bulldoze) || t.Level < 1 || t.Level > MaxLevel(t.Kind) || t.Residents < 0 || t.Residents > Housing(t) || t.OffsetX < 0 || t.OffsetX >= Footprint(t.Kind) || t.OffsetZ < 0 || t.OffsetZ >= Footprint(t.Kind) || (!t.IsAnchor && (t.Residents != 0 || t.Growth != 0 || t.Level != 1)) || t.Growth < 0 || t.Growth >= 6 || !FacadeStyles.IsValid(t) || !GrandParkAppearance.IsValid(t) || !SupermarketAppearance.IsValid(t) || !LogisticsAppearance.IsValid(t))
                     throw new InvalidDataException("建物の保存データが正しくありません");
                 chunk.Cells.Add(index, t);
                 city.RegisterFaces(t.Kind, t.FaceStyles);
+            }
+        }
+        foreach (var (x, z, tile) in city.PlacedCells())
+        {
+            var p = city.AnchorAt(x, z);
+            var anchor = city[p.X, p.Z];
+            if (!anchor.IsAnchor || anchor.Kind != tile.Kind) throw new InvalidDataException("建物の占有範囲が正しくありません");
+            if (!tile.IsAnchor) continue;
+            for (int dz = 0; dz < Footprint(tile.Kind); dz++) for (int dx = 0; dx < Footprint(tile.Kind); dx++)
+            {
+                var part = city[x + dx, z + dz];
+                if (part.Kind != tile.Kind || part.OffsetX != dx || part.OffsetZ != dz) throw new InvalidDataException("建物の占有範囲が正しくありません");
             }
         }
         var reached = new HashSet<ChunkPos>(); var queue = new Queue<ChunkPos>();

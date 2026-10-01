@@ -2,6 +2,12 @@ namespace GrowUpTown;
 
 internal static class SelfTests
 {
+    internal static City DevelopedCity()
+    {
+        var city = City.NewEmpty();
+        while (!city.SpecialsUnlocked) city.Tick();
+        return city;
+    }
     public static int Run()
     {
         int checks = 0;
@@ -10,7 +16,7 @@ internal static class SelfTests
             if (!condition) throw new InvalidOperationException("FAIL: " + name);
             checks++; Console.WriteLine("PASS: " + name);
         }
-        string path = Path.Combine(Path.GetTempPath(), "growuptown-test-" + Guid.NewGuid() + ".json");
+        string path = StoragePaths.ForFile("growuptown-test-" + Guid.NewGuid() + ".json");
         try
         {
             var city = new City();
@@ -57,8 +63,17 @@ internal static class SelfTests
             Check(lowTax.Happiness > highTax.Happiness, "High taxes reduce happiness");
             AppearanceChecks(Check, path);
             WorldTests.Run(Check, path);
+            LandPriceTests.Run(Check, path);
             TrafficTests.Run(Check);
             ParkTests.Run(Check, path);
+            GrandParkTests.Run(Check, path);
+            SupermarketTests.Run(Check, path);
+            LogisticsTests.Run(Check, path);
+            UnlockTests.Run(Check, path);
+            SuperBuildingTests.Run(Check, path);
+            SuperHomeTests.Run(Check, path);
+            UltraCityTests.Run(Check, path);
+            TownNeedsTests.Run(Check);
             Console.WriteLine($"All {checks} checks passed.");
             return 0;
         }
