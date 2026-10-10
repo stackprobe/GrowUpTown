@@ -16,7 +16,7 @@ $ErrorActionPreference = 'Stop'
 
 $solution = Join-Path $PSScriptRoot 'src\GrowUpTown.sln'
 $documents = Join-Path $PSScriptRoot 'doc'
-$launcher = Join-Path $PSScriptRoot '_ゲームスタート.bat'
+$launcher = Join-Path $PSScriptRoot 'res\_ゲームスタート.bat'
 $outputDirectory = Join-Path $PSScriptRoot 'out'
 $archive = Join-Path $outputDirectory 'GrowUpTown.zip'
 
