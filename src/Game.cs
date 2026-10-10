@@ -5,7 +5,7 @@ using static Raylib_cs.Raylib;
 
 namespace GrowUpTown;
 
-public sealed class Game : IDisposable
+public sealed partial class Game : IDisposable
 {
     private readonly Color ink = new(21, 34, 46, 255), panel = new(29, 45, 57, 255), muted = new(151, 174, 183, 255);
     private readonly Color paper = new(239, 245, 236, 255), accent = new(179, 226, 131, 255);
@@ -13,7 +13,10 @@ public sealed class Game : IDisposable
     private readonly BuildingFacades buildingFacades;
     private readonly TerrainRenderer terrain;
     private readonly RoadRenderer roads;
+    private readonly RailwayBallast railwayBallast;
     private readonly TrafficRenderer traffic = new();
+    private readonly TrainTraffic trains = new();
+    private bool trafficPreview;
     private readonly CameraDrag rightDrag = new();
     private readonly List<WorldChunk> visibleChunks = [];
     private int originX, originZ, viewMinX, viewMaxX, viewMinZ, viewMaxZ;
@@ -23,6 +26,7 @@ public sealed class Game : IDisposable
     private (int X, int Z)? painted;
     private bool rotatingView => rightDrag.Active;
     private double smokeTime;
+    private bool backgroundUpdatesEnabled;
     private readonly string savePath = StoragePaths.ForFile("city.json");
     private City city = new();
     private TileKind selected = TileKind.Home;
@@ -34,10 +38,17 @@ public sealed class Game : IDisposable
     private int speed = 1, hoverX, hoverZ;
     private bool help, resetConfirm, specialOpen, specialJustOpened;
     private int specialPage;
-    private static readonly TileKind[] Specials = [TileKind.GrandPark, TileKind.Supermarket, TileKind.LogisticsCenter];
+    private static readonly TileKind[] Specials = [TileKind.GrandPark, TileKind.Supermarket, TileKind.LogisticsCenter,
+        TileKind.Aquarium, TileKind.FerrisWheel, TileKind.RoboticsLab, TileKind.ConcertHall, TileKind.ShoppingMall, TileKind.SpaceCenter, TileKind.Zoo, TileKind.AmusementPark, TileKind.RocketLaunchSite, TileKind.HotSpringResort, TileKind.Stadium, TileKind.Shipyard, TileKind.SafariPark, TileKind.CasinoResort, TileKind.FutureEnergyBase, TileKind.MarineResort, TileKind.ExpoVenue, TileKind.MechaArsenal];
     private bool showBuildPanel = true, showInfoPanel = true;
     private string message = "町づくりへようこそ。道路沿いに住宅を建ててみましょう。";
-    private static readonly TileKind[] Tools = [TileKind.Road, TileKind.Home, TileKind.Shop, TileKind.Factory, TileKind.Park, TileKind.Bulldoze, TileKind.Water, TileKind.SuperMixed, TileKind.SuperFactory, TileKind.SuperIndustryCommerce, TileKind.SuperHome, TileKind.UltraCity];
+    private static readonly TileKind[] Tools = [TileKind.Road, TileKind.Home, TileKind.Shop, TileKind.Factory, TileKind.Park, TileKind.Bulldoze, TileKind.Water, TileKind.SuperMixed, TileKind.SuperFactory, TileKind.SuperIndustryCommerce, TileKind.SuperHome, TileKind.UltraCity, TileKind.Rail, TileKind.Station, TileKind.Forest];
+    private static KeyboardKey ToolShortcut(int index) => index switch
+    {
+        9 => KeyboardKey.Zero, 10 => KeyboardKey.T, 11 => KeyboardKey.U,
+        12 => KeyboardKey.B, 13 => KeyboardKey.N, 14 => KeyboardKey.G,
+        _ => (KeyboardKey)((int)KeyboardKey.One + index)
+    };
     private int W => GetScreenWidth();
     private int H => GetScreenHeight();
 
@@ -60,26 +71,261 @@ public sealed class Game : IDisposable
         if (font.Texture.Id == GetFontDefault().Texture.Id) throw new InvalidOperationException("日本語フォントを読み込めませんでした");
         SetTextureFilter(font.Texture, TextureFilter.Bilinear);
         buildingFacades = new BuildingFacades();
+        SpecialBuildingDetails.Initialize();
         terrain = new TerrainRenderer();
         roads = new RoadRenderer();
+        railwayBallast = new RailwayBallast();
         UpdateCamera();
         RefreshView();
     }
     private static City NewPreviewCity()
     {
         var preview = City.NewEmpty();
-        while (!preview.SpecialsUnlocked) preview.Tick();
+        while (!Enum.GetValues<TileKind>().All(preview.IsUnlocked)) preview.Tick();
         return preview;
     }
     public void Run(bool smokeTest)
     {
+        if (smokeTest && Environment.GetEnvironmentVariable("GROWUPTOWN_TEN_CELL_PREVIEW") is string tenPreview)
+            SetupTenCellPreview(tenPreview);
+        if (smokeTest && Environment.GetEnvironmentVariable("GROWUPTOWN_NINE_CELL_PREVIEW") is string ninePreview)
+            SetupNineCellPreview(ninePreview);
+        if (smokeTest && Environment.GetEnvironmentVariable("GROWUPTOWN_MEGA_SPECIAL_PREVIEW") is string megaPreview)
+            SetupMegaSpecialPreview(megaPreview);
+        if (smokeTest && Environment.GetEnvironmentVariable("GROWUPTOWN_GIANT_SPECIAL_PREVIEW") is string giantPreview)
+            SetupGiantSpecialPreview(giantPreview);
+        if (smokeTest && Environment.GetEnvironmentVariable("GROWUPTOWN_LARGE_SPECIAL_PREVIEW") is string largePreview)
+        {
+            city = NewPreviewCity(); city.Money = 100_000_000; city.AppearanceSeed = 42;
+            TileKind kind = largePreview switch { "mall" => TileKind.ShoppingMall, "space" => TileKind.SpaceCenter, _ => TileKind.ConcertHall };
+            if (largePreview == "scale")
+            {
+                for (int x = 0; x < 24; x++) city.Build(x, 13, TileKind.Road);
+                city.Build(0, 12, TileKind.Road);
+                TileKind[] kinds = [TileKind.ConcertHall, TileKind.ShoppingMall, TileKind.SpaceCenter];
+                for (int i = 0; i < kinds.Length; i++)
+                {
+                    int x = 1 + i * 8; city.Build(x, 7, kinds[i]); city[x, 7].LandmarkStyle = city[x, 7].LandmarkRotation = 0;
+                    city.Build(x, 14, TileKind.Home); city.Build(x + 1, 14, TileKind.Shop);
+                    city.Build(x + 2, 14, TileKind.Park); city.Build(x + 3, 14, TileKind.Factory);
+                }
+                zoom = 20; angle = .2f; pitch = .7f; focus = new(13, 0, 10.5f);
+            }
+            else if (largePreview is "menu" or "menu-last" or "locked-menu")
+            {
+                city = City.NewEmpty(); city.Money = 1_000_000;
+                while (city.Month < (largePreview == "locked-menu" ? 457 : 469)) city.Tick();
+                specialOpen = true; specialPage = largePreview == "menu-last" ? 2 : 1;
+            }
+            else
+            {
+                city.Purchase(new(1, 0)); city.Purchase(new(0, 1)); city.Purchase(new(1, 1));
+                for (int z = 0; z < 28; z++) city.Build(0, z, TileKind.Road);
+                for (int row = 0; row < 4; row++) for (int x = 1; x < 28; x++) city.Build(x, row * 7 + 6, TileKind.Road);
+                for (int id = 0; id < 16; id++)
+                {
+                    int x = 1 + id % 4 * 7, z = id / 4 * 7; city.Build(x, z, kind);
+                    city[x, z].LandmarkStyle = id; city[x, z].LandmarkRotation = 0;
+                }
+                zoom = 41; angle = .15f; pitch = .85f; focus = new(14 + zoom * 140 / H, 0, 13);
+            }
+            speed = 0; selected = kind; showBuildPanel = showInfoPanel = false;
+            message = largePreview == "scale" ? "40年解放の6×6スペシャル・通常の建物との縮尺比較" : $"{City.Name(kind)}：16種類・40年解放・6×6・周辺支援施設";
+            UpdateCamera(); RefreshView(true);
+            if (largePreview == "scale")
+            {
+                trafficPreview = true; traffic.Update(city, visibleChunks, viewMinX, viewMaxX, viewMinZ, viewMaxZ, 0, trains, false);
+                for (int i = 0; i < 3; i++) traffic.AddCar(6 + i * 8, 13, 3, .5f);
+            }
+        }
+        if (smokeTest && Environment.GetEnvironmentVariable("GROWUPTOWN_LANDMARK_PREVIEW") is string landmarkPreview)
+        {
+            city = NewPreviewCity(); city.Money = 10_000_000; city.AppearanceSeed = 42;
+            TileKind kind = landmarkPreview switch { "wheel" => TileKind.FerrisWheel, "robotics" => TileKind.RoboticsLab, _ => TileKind.Aquarium };
+            if (landmarkPreview == "scale")
+            {
+                for (int x = 0; x < 24; x++) city.Build(x, 14, TileKind.Road);
+                for (int z = 12; z < 14; z++) city.Build(0, z, TileKind.Road);
+                TileKind[] kinds = [TileKind.Aquarium, TileKind.FerrisWheel, TileKind.RoboticsLab];
+                for (int i = 0; i < kinds.Length; i++)
+                {
+                    int x = 1 + i * 7; city.Build(x, 9, kinds[i]);
+                    city[x, 9].LandmarkStyle = city[x, 9].LandmarkRotation = 0;
+                    city.Build(x, 15, TileKind.Home); city.Build(x + 1, 15, TileKind.Shop);
+                    city.Build(x + 2, 15, TileKind.Park); city.Build(x + 3, 15, TileKind.Factory);
+                }
+                zoom = 17; angle = .22f; pitch = .64f; focus = new(11, 0, 11.5f);
+            }
+            else
+            {
+                for (int z = 0; z < 24; z++) city.Build(0, z, TileKind.Road);
+                for (int row = 0; row < 4; row++) for (int x = 1; x < 24; x++) city.Build(x, row * 6 + 5, TileKind.Road);
+                for (int id = 0; id < 16; id++)
+                {
+                    int x = 1 + id % 4 * 6, z = id / 4 * 6;
+                    city.Build(x, z, kind); city[x, z].LandmarkStyle = id; city[x, z].LandmarkRotation = 0;
+                }
+                zoom = 35; angle = .18f; pitch = .82f; focus = new(12 + zoom * 140 / H, 0, 11);
+            }
+            speed = 0; selected = kind; showBuildPanel = showInfoPanel = false;
+            message = landmarkPreview == "scale" ? "35年解放のスペシャル3施設・通常の建物との縮尺比較" : $"{City.Name(kind)}：16種類の外観（左上から順に1～16）";
+            if (landmarkPreview is "menu" or "locked-menu")
+            {
+                // Only the preview changes the date; no save data is read or written.
+                city = City.NewEmpty(); city.Money = 1_000_000;
+                while (city.Month < (landmarkPreview == "menu" ? 409 : 349)) city.Tick();
+                specialOpen = true; specialPage = 1;
+            }
+            UpdateCamera(); RefreshView(true);
+            if (landmarkPreview == "scale")
+            {
+                trafficPreview = true;
+                traffic.Update(city, visibleChunks, viewMinX, viewMaxX, viewMinZ, viewMaxZ, 0, trains, false);
+                for (int i = 0; i < 3; i++) traffic.AddCar(6 + i * 7, 14, 3, .5f);
+            }
+        }
+        if (smokeTest && Environment.GetEnvironmentVariable("GROWUPTOWN_FOREST_PREVIEW") is "1" or "menu")
+        {
+            city = NewPreviewCity(); city.Money = 1_000_000; city.AppearanceSeed = 42;
+            for (int id = 0; id < 16; id++)
+            {
+                int x = 3 + id % 4 * 3, z = 3 + id / 4 * 3;
+                city.Build(x, z, TileKind.Forest); city[x, z].ForestStyle = id; city[x, z].ForestRotation = id % 4;
+            }
+            for (int z = 4; z <= 17; z++) for (int x = 16; x <= 21; x++) city.Build(x, z, TileKind.Forest);
+            city.Build(15, 13, TileKind.Park); city.Build(15, 14, TileKind.Park);
+            speed = 0; selected = TileKind.Forest; showInfoPanel = false;
+            showBuildPanel = Environment.GetEnvironmentVariable("GROWUPTOWN_FOREST_PREVIEW") == "menu";
+            zoom = 27; angle = .35f; pitch = .9f; focus = new(12, 0, 10);
+            message = "森林：16種類 / 広葉樹・針葉樹・白樺・混交林 / 3マス以内の住環境＋15・道路不要";
+            UpdateCamera(); RefreshView(true);
+        }
+        bool automaticTrainPreview = Environment.GetEnvironmentVariable("GROWUPTOWN_TRAIN_PREVIEW") == "auto";
+        if (smokeTest && (double.TryParse(Environment.GetEnvironmentVariable("GROWUPTOWN_TRAIN_PREVIEW"), out double previewTime) || automaticTrainPreview))
+        {
+            if (automaticTrainPreview) previewTime = 8;
+            city = NewPreviewCity(); city.Money = 1_000_000; trafficPreview = true;
+            for (int x = 2; x <= 21; x++) city.Build(x, 12, TileKind.Rail);
+            for (int z = 6; z <= 19; z++) city.Build(12, z, TileKind.Road);
+            for (int z = 9; z <= 15; z++) city.Build(7, z, TileKind.Rail);
+            for (int z = 9; z < 12; z++) city.Build(19, z, TileKind.Rail);
+            city.Build(15, 15, TileKind.Road); city.Build(16, 15, TileKind.Road);
+            city.Build(15, 13, TileKind.Station);
+            speed = 0; selected = TileKind.Rail; showBuildPanel = showInfoPanel = false;
+            zoom = 18; angle = .15f; pitch = .8f; focus = new(12, 0, 12);
+            RefreshView(true);
+            trains.Update(city, visibleChunks, viewMinX, viewMaxX, viewMinZ, viewMaxZ, 0, spawn: false);
+            traffic.Update(city, visibleChunks, viewMinX, viewMaxX, viewMinZ, viewMaxZ, 0, trains, false);
+            if (!automaticTrainPreview) trains.AddTrain(9, 12, 3);
+            traffic.AddCar(12, 11, 2);
+            for (int step = 1; step <= Math.Clamp(previewTime, 0, 60) * 60; step++)
+            {
+                smokeTime = step / 60.0;
+                trains.Update(city, visibleChunks, viewMinX, viewMaxX, viewMinZ, viewMaxZ, smokeTime, traffic.HasCarOnTile, automaticTrainPreview, TrainOnScreen);
+                traffic.Update(city, visibleChunks, viewMinX, viewMaxX, viewMinZ, viewMaxZ, smokeTime, trains, false);
+            }
+            message = "列車・駅停車・踏切 / 接近時は赤点滅・遮断 / 車は手前で待機";
+        }
+        if (smokeTest && Environment.GetEnvironmentVariable("GROWUPTOWN_COMPACT_PREVIEW") == "1")
+            SetWindowSize(1200, 800);
+        if (smokeTest && Environment.GetEnvironmentVariable("GROWUPTOWN_RAIL_PREVIEW") == "stations")
+        {
+            city = NewPreviewCity(); city.Money = 1_000_000;
+            for (int id = 0; id < 16; id++)
+            {
+                int x = 3 + id % 4 * 5, z = 2 + id / 4 * 5, platform = id / 4;
+                int entrance = (platform + (id % 4 == 0 ? 2 : id % 4)) % 4;
+                for (int i = -1; i < 3; i++)
+                {
+                    var rail = City.StationSideCell(x, z, platform, i);
+                    city.Build(rail.X, rail.Z, TileKind.Rail);
+                    if (i is 0 or 1)
+                    {
+                        var road = City.StationSideCell(x, z, entrance, i);
+                        city.Build(road.X, road.Z, TileKind.Road);
+                    }
+                }
+                city.Build(x, z, TileKind.Station); city[x, z].StationStyle = id;
+            }
+            speed = 0; selected = TileKind.Station; showBuildPanel = showInfoPanel = false;
+            zoom = 27; angle = .5f; pitch = .85f; focus = new(11, 0, 10);
+            message = "駅：線路2マス側にホーム / 道路側に入口 / 4方向・16種類";
+            RefreshView(true);
+        }
+        if (smokeTest && Environment.GetEnvironmentVariable("GROWUPTOWN_RAIL_PREVIEW") == "junctions")
+        {
+            city = NewPreviewCity(); city.Money = 1_000_000;
+            int[] masks = [7, 11, 13, 14, 15, 10];
+            (int X, int Z)[] directions = [(0, 1), (1, 0), (0, -1), (-1, 0)];
+            for (int i = 0; i < masks.Length; i++)
+            {
+                int x = 4 + i % 3 * 6, z = 5 + i / 3 * 7;
+                city.Build(x, z, TileKind.Rail);
+                for (int d = 0; d < 4; d++) if ((masks[i] & (1 << d)) != 0)
+                    for (int step = 1; step <= 2; step++)
+                        city.Build(x + directions[d].X * step, z + directions[d].Z * step, TileKind.Rail);
+            }
+            city.Build(19, 12, TileKind.Rail);
+            city.Build(14, 13, TileKind.Station); city.Build(17, 13, TileKind.Station);
+            speed = 0; selected = TileKind.Rail; showBuildPanel = showInfoPanel = false;
+            zoom = 22; angle = .06f; pitch = 1.05f; focus = new(10, 0, 9);
+            message = "線路：三叉路4方向・十字路・駅沿いの直線 / バラスト";
+            RefreshView(true);
+        }
+        if (smokeTest && Environment.GetEnvironmentVariable("GROWUPTOWN_RAIL_PREVIEW") == "1")
+        {
+            city = NewPreviewCity(); city.Money = 1_000_000;
+            for (int row = 0; row < 4; row++)
+                for (int x = 2; x <= 21; x++) city.Build(x, 4 + row * 5, TileKind.Rail);
+            for (int id = 0; id < 16; id++)
+            {
+                int x = 3 + id % 4 * 5, z = 2 + id / 4 * 5;
+                city.Build(x, z, TileKind.Station);
+                city[x, z].StationStyle = id; city[x, z].StationRotation = 0;
+            }
+            for (int z = 5; z < 19; z++) city.Build(2, z, TileKind.Rail);
+            for (int z = 2; z <= 21; z++) city.Build(11, z, TileKind.Road);
+            for (int x = 6; x <= 8; x++)
+            {
+                city.Build(x, 3, TileKind.Water); city.Build(x, 5, TileKind.Water);
+            }
+            speed = 0; selected = TileKind.Station;
+            showBuildPanel = showInfoPanel = false;
+            zoom = 29; angle = .12f; pitch = .94f; focus = new(11, 0, 11);
+            message = "駅16種類 / 田園・海辺・都市・レンガ / 鉄道橋・踏切";
+            RefreshView(true);
+        }
         if (smokeTest && int.TryParse(Environment.GetEnvironmentVariable("GROWUPTOWN_UNLOCK_PREVIEW"), out int year)
-            && year is 1 or 5 or 10 or 15)
+            && year is 1 or 5 or 10 or 12 or 15 or 20 or 30 or 40 or 50)
         {
             city = City.NewEmpty();
             while (city.Month < (year - 1) * 12 + 1) city.Tick();
             speed = 0;
             RefreshView(true);
+        }
+        if (smokeTest && Environment.GetEnvironmentVariable("GROWUPTOWN_SPECIAL_PREVIEW") == "scale")
+        {
+            city = NewPreviewCity(); city.Money = 1_000_000; city.AppearanceSeed = 42;
+            for (int x = 0; x < 22; x++) city.Build(x, 13, TileKind.Road);
+            city.Build(0, 12, TileKind.Road);
+            TileKind[] kinds = [TileKind.GrandPark, TileKind.Supermarket, TileKind.LogisticsCenter];
+            for (int i = 0; i < kinds.Length; i++)
+            {
+                int x = 3 + i * 6;
+                city.Build(x, 9, kinds[i]);
+                city[x, 9].ParkStyle = 2; city[x, 9].ParkRotation = 0;
+                city[x, 9].MarketStyle = city[x, 9].MarketRotation = 0;
+                city[x, 9].LogisticsStyle = city[x, 9].LogisticsRotation = 0;
+                city.Build(x, 14, TileKind.Home); city.Build(x + 1, 14, TileKind.Shop);
+                city.Build(x + 2, 14, TileKind.Park); city.Build(x + 3, 14, TileKind.Factory);
+            }
+            speed = 0; trafficPreview = true; selected = TileKind.Empty;
+            showBuildPanel = showInfoPanel = false;
+            zoom = 14; angle = .12f; pitch = .72f; focus = new(11, 0, 11);
+            message = "スペシャル3施設と通常の住宅・商業・公園・工場・走行車の縮尺比較";
+            UpdateCamera(); RefreshView(true);
+            traffic.Update(city, visibleChunks, viewMinX, viewMaxX, viewMinZ, viewMaxZ, 0, trains, false);
+            for (int i = 0; i < kinds.Length; i++) traffic.AddCar(7 + i * 6, 13, 3, .5f);
         }
         if (smokeTest && Environment.GetEnvironmentVariable("GROWUPTOWN_SPECIAL_PREVIEW") is "markets" or "logistics")
         {
@@ -165,6 +411,7 @@ public sealed class Game : IDisposable
             RefreshView(true);
         }
         int frames = 0;
+        backgroundUpdatesEnabled = !smokeTest || Environment.GetEnvironmentVariable("GROWUPTOWN_BACKGROUND_PREVIEW") == "1";
         while (!WindowShouldClose())
         {
             Update();
@@ -199,6 +446,11 @@ public sealed class Game : IDisposable
     }
     private void Update()
     {
+        if (backgroundUpdatesEnabled)
+        {
+            city.EnableDeferredUpdates();
+            city.ServiceBackgroundUpdates(Math.Min(GetFrameTime(), .1f));
+        }
         if ((IsKeyDown(KeyboardKey.LeftAlt) || IsKeyDown(KeyboardKey.RightAlt))
             && (IsKeyPressed(KeyboardKey.Enter) || IsKeyPressed(KeyboardKey.KpEnter)))
             ToggleDisplayMode();
@@ -218,7 +470,7 @@ public sealed class Game : IDisposable
         if (IsKeyPressed(KeyboardKey.F9)) Load();
         if (IsKeyPressed(KeyboardKey.L)) { landMode = !landMode; selected = TileKind.Empty; }
         for (int i = 0; i < Tools.Length; i++)
-            if (IsKeyPressed(i == 11 ? KeyboardKey.U : i == 10 ? KeyboardKey.T : i == 9 ? KeyboardKey.Zero : (KeyboardKey)((int)KeyboardKey.One + i)) && city.IsUnlocked(Tools[i])) { selected = Tools[i]; landMode = false; }
+            if (IsKeyPressed(ToolShortcut(i)) && city.IsUnlocked(Tools[i])) { selected = Tools[i]; landMode = false; }
         Vector3 right = new(MathF.Cos(angle), 0, -MathF.Sin(angle));
         Vector3 forward = new(-MathF.Sin(angle), 0, -MathF.Cos(angle));
         if (IsKeyDown(KeyboardKey.W) || IsKeyDown(KeyboardKey.Up)) focus += forward * dt * 12;
@@ -276,7 +528,7 @@ public sealed class Game : IDisposable
         if (hasHover && selected != TileKind.Empty && !IsMouseButtonDown(MouseButton.Right) && IsMouseButtonDown(MouseButton.Left))
         {
             var cell = (hoverX, hoverZ);
-            if (painted != cell && (selected is TileKind.Road or TileKind.Water || IsMouseButtonPressed(MouseButton.Left)))
+            if (painted != cell && (selected is TileKind.Forest or TileKind.Road or TileKind.Rail or TileKind.Water || IsMouseButtonPressed(MouseButton.Left)))
             { message = city.Build(hoverX, hoverZ, selected); painted = cell; }
         }
         elapsed += dt * speed; smokeTime += dt * speed;
@@ -312,6 +564,13 @@ public sealed class Game : IDisposable
         originX += sx; originZ += sz; focus.X -= sx; focus.Z -= sz;
     }
     private static int ClampWorldCoordinate(double value) => (int)Math.Clamp(value, -(double)City.MaxChunkCoordinate * City.Size, (double)City.MaxChunkCoordinate * City.Size + City.Size - 1);
+    private bool TrainOnScreen(Vector2 position)
+    {
+        var screen = GetWorldToScreen(new(position.X - originX, .3f, position.Y - originZ), camera);
+        return screen.X > (showBuildPanel ? 290 : 0) && screen.X < W
+            && screen.Y > 108 && screen.Y < H - 76
+            && !(showInfoPanel && CheckCollisionPointRec(screen, new(W - 354, 124, 340, 397)));
+    }
     private void RefreshView(bool force = false)
     {
         float minX = float.MaxValue, minZ = float.MaxValue, maxX = float.MinValue, maxZ = float.MinValue;
@@ -325,8 +584,9 @@ public sealed class Game : IDisposable
                 minZ = Math.Min(minZ, p.Z); maxZ = Math.Max(maxZ, p.Z);
             }
         }
-        viewMinX = ClampWorldCoordinate(originX + Math.Floor(minX) - 3); viewMaxX = ClampWorldCoordinate(originX + Math.Ceiling(maxX) + 1);
-        viewMinZ = ClampWorldCoordinate(originZ + Math.Floor(minZ) - 3); viewMaxZ = ClampWorldCoordinate(originZ + Math.Ceiling(maxZ) + 1);
+        // Include anchors of the largest facilities even when only their far edge is visible.
+        viewMinX = ClampWorldCoordinate(originX + Math.Floor(minX) - (City.MaxFootprint - 1)); viewMaxX = ClampWorldCoordinate(originX + Math.Ceiling(maxX) + 1);
+        viewMinZ = ClampWorldCoordinate(originZ + Math.Floor(minZ) - (City.MaxFootprint - 1)); viewMaxZ = ClampWorldCoordinate(originZ + Math.Ceiling(maxZ) + 1);
         var bounds = (ChunkPos.Divide(viewMinX), ChunkPos.Divide(viewMaxX), ChunkPos.Divide(viewMinZ), ChunkPos.Divide(viewMaxZ));
         if (!force && previousView == bounds) return;
         previousView = bounds;
@@ -353,8 +613,14 @@ public sealed class Game : IDisposable
     }
     private Color KindColor(TileKind kind) => kind switch
     {
+        TileKind.MarineResort => new(133, 196, 205, 255), TileKind.ExpoVenue => new(211, 180, 134, 255), TileKind.MechaArsenal => new(152, 174, 192, 255),
+        TileKind.SafariPark => new(177, 190, 112, 255), TileKind.CasinoResort => new(210, 170, 124, 255), TileKind.FutureEnergyBase => new(141, 190, 198, 255),
+        TileKind.HotSpringResort => new(168, 195, 186, 255), TileKind.Stadium => new(224, 168, 116, 255), TileKind.Shipyard => new(142, 178, 195, 255),
+        TileKind.Zoo => new(157, 190, 112, 255), TileKind.AmusementPark => new(221, 160, 119, 255), TileKind.RocketLaunchSite => new(153, 177, 199, 255),
+        TileKind.ConcertHall => new(217, 164, 139, 255), TileKind.ShoppingMall => new(218, 180, 96, 255), TileKind.SpaceCenter => new(154, 181, 220, 255),
+        TileKind.Aquarium => new(105, 193, 210, 255), TileKind.FerrisWheel => new(232, 167, 111, 255), TileKind.RoboticsLab => new(160, 173, 219, 255),
         TileKind.UltraCity => new(115, 224, 211, 255), TileKind.SuperHome => new(153, 210, 219, 255),
-        TileKind.Road => new(122, 142, 155, 255), TileKind.Home => new(161, 216, 124, 255),
+        TileKind.Forest => new(121, 177, 83, 255), TileKind.Rail => new(155, 167, 185, 255), TileKind.Station => new(224, 187, 120, 255), TileKind.Road => new(122, 142, 155, 255), TileKind.Home => new(161, 216, 124, 255),
         TileKind.SuperIndustryCommerce => new(120, 183, 196, 255), TileKind.SuperMixed => new(126, 202, 179, 255), TileKind.SuperFactory => new(211, 151, 81, 255), TileKind.Shop => new(104, 189, 218, 255), TileKind.Factory => new(231, 171, 92, 255),
         TileKind.LogisticsCenter => new(134, 176, 210, 255), TileKind.Supermarket => new(235, 177, 93, 255), TileKind.GrandPark => new(152, 209, 115, 255), TileKind.Water => new(76, 161, 188, 255), TileKind.Park => new(100, 187, 153, 255), TileKind.Bulldoze => new(233, 131, 117, 255), _ => paper
     };
@@ -391,7 +657,8 @@ public sealed class Game : IDisposable
     }
     private void DrawWorld()
     {
-        traffic.Update(city, visibleChunks, viewMinX, viewMaxX, viewMinZ, viewMaxZ, smokeTime);
+        trains.Update(city, visibleChunks, viewMinX, viewMaxX, viewMinZ, viewMaxZ, smokeTime, traffic.HasCarOnTile, !trafficPreview, TrainOnScreen);
+        traffic.Update(city, visibleChunks, viewMinX, viewMaxX, viewMinZ, viewMaxZ, smokeTime, trains, !trafficPreview);
         BeginMode3D(camera);
         terrain.Draw(city, visibleChunks, originX, originZ);
         foreach (var chunk in visibleChunks)
@@ -426,10 +693,40 @@ public sealed class Game : IDisposable
                         }
                     }
                 }
+                else if (tile.Kind == TileKind.Rail)
+                {
+                    RailwayRenderer.DrawTrack(city, wx, wz, x, z);
+                }
+                else if (tile.Kind == TileKind.Station)
+                {
+                    RailwayRenderer.DrawStation(x, z, tile);
+                }
+                else if (tile.Kind == TileKind.Forest)
+                {
+                    ForestRenderer.Draw(city, wx, wz, x, z, tile);
+                }
                 else if (tile.Kind == TileKind.Park)
                 {
                     ParkRenderer.Draw(city, wx, wz, x, z);
                 }
+                else if (tile.Kind == TileKind.MarineResort) MarineResortRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.ExpoVenue) ExpoVenueRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.MechaArsenal) MechaArsenalRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.SafariPark) SafariParkRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.CasinoResort) CasinoResortRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.FutureEnergyBase) FutureEnergyBaseRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.HotSpringResort) HotSpringResortRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.Stadium) StadiumRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.Shipyard) AutoFactoryRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.Zoo) ZooRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.AmusementPark) AmusementParkRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.RocketLaunchSite) RocketLaunchSiteRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.ConcertHall) ConcertHallRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.ShoppingMall) ShoppingMallRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.SpaceCenter) SpaceCenterRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.Aquarium) AquariumRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.FerrisWheel) FerrisWheelRenderer.Draw(x, z, tile);
+                else if (tile.Kind == TileKind.RoboticsLab) RoboticsLabRenderer.Draw(x, z, tile);
                 else if (tile.Kind == TileKind.LogisticsCenter)
                 {
                     LogisticsRenderer.Draw(x, z, tile);
@@ -466,13 +763,16 @@ public sealed class Game : IDisposable
                         DrawFactorySmoke(x, z, height + .6f, wx, wz, tile.Connected);
                     }
                 }
-                if (!tile.Connected && tile.Kind != TileKind.Park)
+                if (tile.RailCrossing) RailwayRenderer.DrawTrack(city, wx, wz, x, z, trains, smokeTime);
+                if ((tile.Kind == TileKind.Station ? !tile.RailActive : !tile.Connected) && tile.Kind is not (TileKind.Forest or TileKind.Park or TileKind.Rail))
                     DrawCubeWires(new(x + (City.Footprint(tile.Kind) - 1) * .5f, .15f, z + (City.Footprint(tile.Kind) - 1) * .5f), City.Footprint(tile.Kind) - .06f, .3f, City.Footprint(tile.Kind) - .06f, new(222, 98, 88, 255));
             }
         }
         terrain.DrawWater(visibleChunks, originX, originZ, smokeTime);
         roads.Draw(city, visibleChunks, originX, originZ);
+        railwayBallast.Draw(visibleChunks, originX, originZ);
         traffic.Draw(originX, originZ);
+        trains.Draw(originX, originZ);
         buildingFacades.Draw(visibleChunks, camera, originX, originZ);
         if (landMode)
         {
@@ -628,28 +928,31 @@ public sealed class Game : IDisposable
         Panel(new(14, 122, 270, H - 208), ink);
         Text("BUILD / 建設", 30, 140, 21);
         Text("道路入口 [0, 12] から町を広げよう", 30, 173, 14, muted);
+        int rowStep = H < 850 ? 19 : 23;
         for (int i = 0; i < Tools.Length; i++)
         {
             var kind = Tools[i];
-            if (Button(new(28, 203 + i * 23, 242, 21), !city.IsUnlocked(kind) ? $"{(i == 11 ? "U" : i == 10 ? "T" : ((i + 1) % 10).ToString())}  ？  ¥？" : $"{(i == 11 ? "U" : i == 10 ? "T" : ((i + 1) % 10).ToString())}  {(kind == TileKind.UltraCity ? "ultra複合都市" : City.Name(kind))}  ¥{City.Cost(kind)}", !landMode && selected == kind, KindColor(kind), 14, available: city.IsUnlocked(kind))) { selected = kind; landMode = false; }
+            char shortcut = (char)(int)ToolShortcut(i);
+            if (Button(new(28, 203 + i * rowStep, 242, rowStep - 2), !city.IsUnlocked(kind) ? $"{shortcut}  ？  ¥？" : $"{shortcut}  {(kind == TileKind.UltraCity ? "ultra複合都市" : City.Name(kind))}  ¥{City.Cost(kind)}", !landMode && selected == kind, KindColor(kind), 14, available: city.IsUnlocked(kind))) { selected = kind; landMode = false; }
         }
-        if (Button(new(28, 482, 242, 23), city.SpecialsUnlocked ? "スペシャル  …" : "？  ¥？", !landMode && Specials.Contains(selected), KindColor(TileKind.GrandPark), 15, available: city.SpecialsUnlocked))
+        int offset = 203 + Tools.Length * rowStep + 3 - 482;
+        if (Button(new(28, 482 + offset, 242, 23), city.SpecialsUnlocked ? "スペシャル  …" : "？  ¥？", !landMode && Specials.Contains(selected), KindColor(TileKind.GrandPark), 15, available: city.SpecialsUnlocked))
         {
             specialOpen = specialJustOpened = true; specialPage = 0;
             hasHover = false; rightDrag.Cancel(); painted = null;
         }
-        if (Button(new(28, 510, 242, 32), $"L   土地購入  ¥{city.LandPrice:N0}", landMode)) { landMode = !landMode; selected = TileKind.Empty; }
-        Text($"町の運営  /  {city.Chunks.Count}区画", 30, 555, 19);
-        Text($"税率  {city.TaxRate}%", 30, 592, 20);
-        if (Button(new(166, 585, 45, 36), "−")) city.TaxRate = Math.Max(5, city.TaxRate - 1);
-        if (Button(new(220, 585, 45, 36), "+")) city.TaxRate = Math.Min(20, city.TaxRate + 1);
-        Text($"税収     ¥ {city.LastIncome:N0}", 30, 633, 16, muted);
-        Text($"維持費  ¥ {city.LastExpense:N0}", 30, 659, 16, muted);
-        Text($"仕事の定員  {city.Jobs}人", 30, 685, 16, muted);
-        if (H >= 910)
+        if (Button(new(28, 510 + offset, 242, 32), $"L   土地購入  ¥{city.LandPrice:N0}", landMode)) { landMode = !landMode; selected = TileKind.Empty; }
+        Text($"町の運営  /  {city.Chunks.Count}区画", 30, 555 + offset, 19);
+        Text($"税率  {city.TaxRate}%", 30, 592 + offset, 20);
+        if (Button(new(166, 585 + offset, 45, 36), "−")) city.TaxRate = Math.Max(5, city.TaxRate - 1);
+        if (Button(new(220, 585 + offset, 45, 36), "+")) city.TaxRate = Math.Min(20, city.TaxRate + 1);
+        Text($"税収     ¥ {city.LastIncome:N0}", 30, 633 + offset, 16, muted);
+        Text($"維持費  ¥ {city.LastExpense:N0}", 30, 659 + offset, 16, muted);
+        Text($"仕事の定員  {city.Jobs}人", 30, 685 + offset, 16, muted);
+        if (H >= 910 + offset)
         {
-            Text("発展のヒント", 30, 723, 18, accent);
-            Text("住宅と職場を道路沿いに。\n公園は近隣の幸福度を改善。\n工場は住宅から離しましょう。", 30, 756, 15, muted);
+            Text("発展のヒント", 30, 723 + offset, 18, accent);
+            Text("住宅と職場を道路沿いに。\n公園・森林で住環境を改善。\n工場は住宅から離しましょう。", 30, 756 + offset, 15, muted);
         }
     }
     private void DrawInfoPanel()
@@ -669,19 +972,26 @@ public sealed class Game : IDisposable
         {
             Tile t = city.BuildingAt(hoverX, hoverZ);
             Panel(new(306, H - 159, Math.Min(610, W - 325), 68), ink);
-            Text($"{City.Name(t.Kind)}   [{hoverX}, {hoverZ}]" + (FacadeStyles.IsBuilding(t.Kind) ? $"  Lv.{t.Level}" : ""), 324, H - 147, 18, accent);
+            Text($"{(t.RailCrossing ? "踏切" : City.Name(t.Kind))}   [{hoverX}, {hoverZ}]" + (FacadeStyles.IsBuilding(t.Kind) ? $"  Lv.{t.Level}" : ""), 324, H - 147, 18, accent);
             string detail = t.Kind switch
             {
-                TileKind.Empty => "左クリックで建設 / 道路・水域はドラッグで連続配置",
+                TileKind.Empty => selected == TileKind.Station ? "駅：空いた2×2マスと、辺に沿う直線線路2マスが必要（両方とも直線）" : "左クリックで建設 / 道路・線路・水域はドラッグで連続配置",
+                TileKind.Road when t.RailCrossing => "踏切 / 道路・線路の接続を維持 / 撤去で両方を除去",
                 TileKind.Park => t.Connected ? "道路接続あり（公園経由を含む） / 住環境＋10" : "道路未接続 / 効果30％：住環境＋3",
+                TileKind.MarineResort or TileKind.ExpoVenue or TileKind.MechaArsenal or TileKind.SafariPark or TileKind.CasinoResort or TileKind.FutureEnergyBase or TileKind.HotSpringResort or TileKind.Stadium or TileKind.Shipyard or TileKind.Zoo or TileKind.AmusementPark or TileKind.RocketLaunchSite or TileKind.ConcertHall or TileKind.ShoppingMall or TileKind.SpaceCenter or TileKind.Aquarium or TileKind.FerrisWheel or TileKind.RoboticsLab => $"外観 {t.LandmarkStyle + 1}/16・固定 / "
+                    + (t.Connected ? $"{LandmarkAppearance.Range(t.Kind)}マス内：{LandmarkAppearance.Effect(t.Kind)}" : "効果には道路接続が必要"),
+                TileKind.Forest => $"外観 {t.ForestStyle + 1}/16・固定 / 3マス内：住環境＋15 / 道路不要・公園と接続なし / 月18円",
                 TileKind.GrandPark => $"外観 {t.ParkStyle + 1}/16・固定 / " + (t.Connected ? "道路接続あり（公園経由を含む） / 住環境＋20" : "道路未接続 / 効果30％：住環境＋6"),
                 TileKind.LogisticsCenter => $"外観 {t.LogisticsStyle + 1}/16・固定 / " + (t.Connected ? "工業・商業税収＋20％" : "効果には道路接続が必要"),
+                TileKind.Rail => "ドラッグで敷設 / 道路と重ねると踏切",
+                TileKind.Station => $"外観 {t.StationStyle + 1}/16・固定 / " + (t.RailActive ? "住宅＋10・商業税収＋20％" : "線路で別の駅に接続してください"),
                 TileKind.Supermarket => $"外観 {t.MarketStyle + 1}/16・固定 / " + (t.Connected ? "住宅＋10・商業税収＋20％" : "効果には道路接続が必要"),
                 TileKind.Water => "水辺が近隣の住環境を改善",
                 _ => t.Connected ? "道路接続あり" : "道路未接続"
             };
             detail += (City.HasHomes(t.Kind) ? $"   住民 {t.Residents}/{City.Housing(t)}人   住環境 {t.Comfort:+0;-0;0}" : "")
-                + (t.MarketAccess && t.Connected ? "   商業＋20％" : "") + (t.LogisticsAccess && t.Connected ? "   物流＋20％" : "");
+                + (t.MarketAccess && t.Connected ? "   商業＋20％" : "") + (t.LogisticsAccess && t.Connected ? "   物流＋20％" : "")
+                + (t.RailAccess && t.Connected ? "   鉄道＋20％" : "");
             float detailSize = Math.Min(15, 15 * (Math.Min(610, W - 325) - 36) / Math.Max(1, MeasureTextEx(font, detail, 15, 1).X));
             Text(detail, 324, H - 117, detailSize, muted);
         }
@@ -725,7 +1035,7 @@ public sealed class Game : IDisposable
         Panel(new(x, y, 740, 540), ink);
         Text(resetConfirm ? "新しい町を始めますか？" : "小さな町を、大きな暮らしへ。", x + 35, y + 30, 28, accent);
         string body = resetConfirm ? "現在の未保存の進行は失われます。\n保存した町は F9 で読み込めます。" :
-            "1. 道路を最初の入口 [0, 12] へつなげます。\n2. 道路に隣接して住宅・商業地・工業地を建設します。\n3. 職場を増やすと住民が増え、毎月税金が入ります。\n4. 公園と低い税率で幸福度を保ちましょう。\n5. 条件を6か月満たすと成長（通常Lv.3 / super Lv.6 / ultra Lv.9）。\n\n1〜9・0・T・U 建設選択 / U：ultra（3×3） / 左クリック 建設\n右ドラッグ 回転 / Shift＋右ドラッグ 移動\nWASD・中ドラッグ 移動 / Q・E 回転 / L 土地購入\nR・F / Shift＋ホイール 俯角調整（10〜85度）\nホイール 拡大縮小 / Home カメラ初期化 / Alt＋Enter 全画面\nSPACE 停止・再開 / F5 保存 / F9 読込 / F1 操作\n\n5秒で1か月。土地は24×24、初回100万円・購入ごとに50万円増。\n目標は人口500人。達成後も自由に町を育てられます。";
+            "1. 道路を最初の入口 [0, 12] へつなげます。\n2. 道路に隣接して住宅・商業地・工業地を建設します。\n3. 職場を増やすと住民が増え、毎月税金が入ります。\n4. 公園・森林と低い税率で幸福度を保ちましょう。\n5. 条件を6か月満たすと成長（通常Lv.3 / super Lv.6 / ultra Lv.9）。\n\n1〜9・0・T・U 建設 / G 森林 / B 線路・N 駅（40年） / 左クリック 配置\n右ドラッグ 回転 / Shift＋右ドラッグ 移動\nWASD・中ドラッグ 移動 / Q・E 回転 / L 土地購入\nR・F / Shift＋ホイール 俯角調整（10〜85度）\nホイール 拡大縮小 / Home カメラ初期化 / Alt＋Enter 全画面\nSPACE 停止・再開 / F5 保存 / F9 読込 / F1 操作\n\n5秒で1か月。土地は24×24、初回100万円・購入ごとに50万円増。\n目標は人口500人。達成後も自由に町を育てられます。";
         Text(body, x + 35, y + 91, 18);
         Rectangle close = new(x + 35, y + 467, 310, 44);
         Panel(close, accent); Text(resetConfirm ? "続ける（キャンセル）" : "町づくりを続ける", x + 52, y + 480, 18, ink);
@@ -734,7 +1044,7 @@ public sealed class Game : IDisposable
         {
             Rectangle confirm = new(x + 370, y + 467, 330, 44);
             Panel(confirm, KindColor(TileKind.Bulldoze)); Text("新しい町を作る", x + 390, y + 480, 18, ink);
-            if (Hit(confirm) && IsMouseButtonPressed(MouseButton.Left)) { city = new(); elapsed = 0; speed = 1; selected = TileKind.Empty; specialOpen = false; resetConfirm = false; landMode = false; ResetCamera(); UpdateCamera(); RefreshView(true); message = "新しい町を作りました"; }
+            if (Hit(confirm) && IsMouseButtonPressed(MouseButton.Left)) { city.StopBackgroundUpdates(); city = new(); elapsed = 0; speed = 1; selected = TileKind.Empty; specialOpen = false; resetConfirm = false; landMode = false; ResetCamera(); UpdateCamera(); RefreshView(true); message = "新しい町を作りました"; }
         }
     }
     private void DrawSpecialModal()
@@ -755,11 +1065,12 @@ public sealed class Game : IDisposable
             int index = specialPage * pageSize + row;
             if (index >= Specials.Length) break;
             TileKind kind = Specials[index];
+            bool unlocked = city.IsUnlocked(kind);
             Rectangle card = new(x + 30, y + 116 + row * 84, 660, 74);
-            Panel(card, Hit(card) ? new Color(57, 78, 89, 255) : panel);
-            Text($"{City.Name(kind)}   {City.Footprint(kind)}×{City.Footprint(kind)}   ¥{City.Cost(kind):N0}", card.X + 18, card.Y + 10, 22, accent);
-            Text(kind == TileKind.GrandPark ? "Lv.1固定 / 16種 / 月120円 / 5マス内：接続＋20・未接続＋6（公園経由可）" : kind == TileKind.Supermarket ? "Lv.1固定 / 16種 / 維持費160円・月 / 接続で5マス内：住宅＋10・商業税収＋20％" : kind == TileKind.LogisticsCenter ? "Lv.1固定 / 16種 / 維持費180円・月 / 接続で5マス内の工業・商業税収＋20％" : "クリックして建設を選択", card.X + 18, card.Y + 43, 15, paper);
-            if (click && Hit(card))
+            Panel(card, unlocked && Hit(card) ? new Color(57, 78, 89, 255) : panel);
+            Text(unlocked ? $"{City.Name(kind)}   {City.Footprint(kind)}×{City.Footprint(kind)}   ¥{City.Cost(kind):N0}" : "？   ¥？", card.X + 18, card.Y + 10, 22, unlocked ? accent : muted);
+            Text(!unlocked ? "？" : LandmarkAppearance.IsLandmark(kind) ? $"Lv.1固定 / 16種 / 月{LandmarkAppearance.Maintenance(kind)}円 / 接続で{LandmarkAppearance.Range(kind)}マス内：{LandmarkAppearance.Effect(kind)}" : kind == TileKind.GrandPark ? "Lv.1固定 / 16種 / 月120円 / 5マス内：接続＋20・未接続＋6（公園経由可）" : kind == TileKind.Supermarket ? "Lv.1固定 / 16種 / 維持費160円・月 / 接続で5マス内：住宅＋10・商業税収＋20％" : kind == TileKind.LogisticsCenter ? "Lv.1固定 / 16種 / 維持費180円・月 / 接続で5マス内の工業・商業税収＋20％" : "クリックして建設を選択", card.X + 18, card.Y + 43, 15, unlocked ? paper : muted);
+            if (unlocked && click && Hit(card))
             {
                 selected = kind; landMode = false; specialOpen = false; hasHover = false; painted = null;
                 message = $"スペシャル：{City.Name(kind)} / 空いた{City.Footprint(kind)}×{City.Footprint(kind)}マスを選択";
@@ -804,9 +1115,9 @@ public sealed class Game : IDisposable
     }
     private void Load()
     {
-        try { city = City.Load(savePath); elapsed = 0; landMode = false; specialOpen = false; selected = TileKind.Empty; ResetCamera(); UpdateCamera(); RefreshView(true); message = "保存した町を読み込みました"; }
+        try { var loaded = City.Load(savePath); city.StopBackgroundUpdates(); city = loaded; elapsed = 0; landMode = false; specialOpen = false; selected = TileKind.Empty; ResetCamera(); UpdateCamera(); RefreshView(true); message = "保存した町を読み込みました"; }
         catch (InvalidDataException ex) { message = ex.Message; }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException) { message = "読込できませんでした。保存データの存在と形式を確認してください"; }
     }
-    public void Dispose() { roads.Dispose(); terrain.Dispose(); buildingFacades.Dispose(); UnloadFont(font); CloseWindow(); }
+    public void Dispose() { city.StopBackgroundUpdates(); railwayBallast.Dispose(); roads.Dispose(); terrain.Dispose(); buildingFacades.Dispose(); SpecialBuildingDetails.Shutdown(); UnloadFont(font); CloseWindow(); }
 }

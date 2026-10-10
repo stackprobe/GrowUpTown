@@ -58,14 +58,14 @@ internal static class FacadeStyles
         (int nx, int nz) = face switch { 0 => (0, 1), 1 => (1, 0), 2 => (0, -1), _ => (-1, 0) };
         Setting result = Setting.None;
         int ax = x + nx, az = z + nz;
-        if (!city.Inside(ax, az) || city[ax, az].Kind is TileKind.Empty or TileKind.Park or TileKind.Water || city[ax, az].Level <= floor)
+        if (!city.Inside(ax, az) || city[ax, az].Kind is TileKind.Empty or TileKind.Forest or TileKind.Park or TileKind.Water || city[ax, az].Level <= floor)
             result |= Setting.Open;
         if (city.Inside(ax, az) && city[ax, az].Kind == TileKind.Road) result |= Setting.Street;
         for (int dz = -2; dz <= 2; dz++) for (int dx = -2; dx <= 2; dx++)
         {
             if (dx * nx + dz * nz <= 0 || Math.Abs(dx) + Math.Abs(dz) > 3 || !city.Inside(x + dx, z + dz)) continue;
             var nearby = city[x + dx, z + dz];
-            if (nearby.Kind is TileKind.Park or TileKind.Water) result |= Setting.Green;
+            if (nearby.Kind is TileKind.Forest or TileKind.Park or TileKind.Water) result |= Setting.Green;
             if (nearby.Kind == TileKind.Factory) result |= Setting.Industry;
             if (IsBuilding(nearby.Kind) && nearby.Level > floor) result |= Setting.Dense;
         }

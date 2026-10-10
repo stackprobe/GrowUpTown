@@ -5,7 +5,7 @@ internal static class SelfTests
     internal static City DevelopedCity()
     {
         var city = City.NewEmpty();
-        while (!city.SpecialsUnlocked) city.Tick();
+        while (!Enum.GetValues<TileKind>().All(city.IsUnlocked)) city.Tick();
         return city;
     }
     public static int Run()
@@ -66,14 +66,25 @@ internal static class SelfTests
             LandPriceTests.Run(Check, path);
             TrafficTests.Run(Check);
             ParkTests.Run(Check, path);
+            ForestTests.Run(Check, path);
             GrandParkTests.Run(Check, path);
             SupermarketTests.Run(Check, path);
             LogisticsTests.Run(Check, path);
+            LandmarkTests.Run(Check, path);
+            LargeSpecialTests.Run(Check, path);
+            GiantSpecialTests.Run(Check, path);
+            MegaSpecialTests.Run(Check, path);
+            NineCellSpecialTests.Run(Check, path);
+            TenCellSpecialTests.Run(Check, path);
+            RailwayTests.Run(Check, path);
+            StationPlacementTests.Run(Check, path);
+            TrainTrafficTests.Run(Check, path);
             UnlockTests.Run(Check, path);
             SuperBuildingTests.Run(Check, path);
             SuperHomeTests.Run(Check, path);
             UltraCityTests.Run(Check, path);
             TownNeedsTests.Run(Check);
+            BackgroundNetworkTests.Run(Check, path);
             Console.WriteLine($"All {checks} checks passed.");
             return 0;
         }

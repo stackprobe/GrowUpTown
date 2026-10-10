@@ -19,30 +19,37 @@ internal static class LogisticsRenderer
     {
         Box(x, .13f, z, w, h, d, Concrete);
         Box(x, .13f + h, z, w + .10f, .08f, d + .10f, accent);
+        SpecialBuildingDetails.Roof(x, h + .211f, z, w - .06f, d - .06f, accent);
         Box(x, h - .03f, z + d / 2 + .02f, w, .12f, .035f, accent);
+        // Wider halls have more loading doors, rather than oversized doors.
+        bays = Math.Max(bays, (int)(w / .42f));
         for (int i = 0; i < bays; i++)
         {
             float bx = x + (i - (bays - 1) / 2f) * w / bays;
-            Box(bx, .13f, z + d / 2 + .02f, w / bays * .66f, .52f, .035f, Asphalt);
-            for (int slat = 0; slat < 5; slat++) Box(bx, .19f + slat * .085f, z + d / 2 + .044f, w / bays * .62f, .022f, .015f, Steel);
-            Box(bx, .10f, z + d / 2 + .13f, w / bays * .78f, .09f, .30f, Concrete);
-            foreach (int side in new[] { -1, 1 }) Box(bx + side * w / bays * .38f, .14f, z + d / 2 + .19f, .045f, .27f, .045f, Yellow);
+            float doorWidth = Math.Min(.28f, w / bays * .66f);
+            Box(bx, .13f, z + d / 2 + .02f, doorWidth, .33f, .035f, Asphalt);
+            for (int slat = 0; slat < 6; slat++) Box(bx, .16f + slat * .047f, z + d / 2 + .044f, doorWidth - .025f, .012f, .015f, Steel);
+            Box(bx, .108f, z + d / 2 + .09f, doorWidth + .06f, .022f, .18f, Concrete);
+            foreach (int side in new[] { -1, 1 }) Box(bx + side * (doorWidth / 2 + .035f), .13f, z + d / 2 + .14f, .023f, .14f, .023f, Yellow);
+            Box(bx, h - .24f, z + d / 2 + .02f, doorWidth, .10f, .025f, Glass);
         }
         foreach (int side in new[] { -1, 1 })
-            for (int i = 0; i < 4; i++) Box(x + side * (w / 2 + .012f), .25f, z - d * .35f + i * d * .23f, .025f, h * .70f, .035f, Steel);
+            for (int i = 0; i < Math.Max(2, (int)(d / .22f)); i++)
+                Box(x + side * (w / 2 + .012f), .19f, z - d / 2 + .10f + i * .22f, .02f, h - .12f, .018f, Steel);
     }
     private static void Container(float x, float z, float y, Color c, float d = .85f)
     {
-        Box(x, y, z, .52f, .35f, d, c);
-        for (int i = -2; i <= 2; i++) Box(x + i * .09f, y + .03f, z + d / 2 + .007f, .02f, .29f, .015f, Steel);
-        Box(x, y + .35f, z, .54f, .025f, d + .02f, Steel);
+        Box(x, y, z, .26f, .24f, d, c);
+        for (int i = -2; i <= 2; i++) Box(x + i * .045f, y + .02f, z + d / 2 + .007f, .009f, .20f, .015f, Steel);
+        Box(x, y + .24f, z, .27f, .015f, d + .02f, Steel);
     }
     private static void Truck(float x, float z, Color c)
     {
-        Box(x, .20f, z - .11f, .34f, .29f, .62f, White);
-        Box(x, .18f, z + .32f, .34f, .25f, .25f, c);
-        Box(x, .29f, z + .453f, .26f, .10f, .018f, Glass);
-        foreach (int a in new[] { -1, 1 }) foreach (int b in new[] { -1, 1 }) Box(x + a * .17f, .11f, z + b * .29f, .045f, .13f, .13f, Asphalt);
+        // About twice the length of a road car, with wheels resting on the apron.
+        Box(x, .16f, z - .06f, .18f, .20f, .34f, White);
+        Box(x, .15f, z + .17f, .18f, .16f, .14f, c);
+        Box(x, .23f, z + .245f, .14f, .065f, .012f, Glass);
+        foreach (int a in new[] { -1, 1 }) foreach (int b in new[] { -1, 1 }) Box(x + a * .09f, .108f, z + b * .16f, .025f, .08f, .08f, Asphalt);
     }
     private static void Office(float x, float z, float w, float d, float h, Color color)
     {
@@ -51,7 +58,10 @@ internal static class LogisticsRenderer
         {
             Box(x, y, z + d / 2 + .01f, w * .82f, .16f, .025f, Glass);
             Box(x + w / 2 + .01f, y, z, .025f, .16f, d * .82f, Glass);
+            for (float px = -w * .35f; px < w * .4f; px += .19f) Box(x + px, y, z + d / 2 + .027f, .016f, .16f, .015f, White);
+            for (float pz = -d * .35f; pz < d * .4f; pz += .19f) Box(x + w / 2 + .027f, y, z + pz, .015f, .16f, .016f, White);
         }
+        Box(x, .13f, z + d / 2 + .025f, .13f, .24f, .025f, Glass);
         Box(x, h + .13f, z, w + .06f, .07f, d + .06f, color);
     }
     private static void Solar(float x, float z, float y, int count)
@@ -71,16 +81,16 @@ internal static class LogisticsRenderer
         Box(0, .02f, 0, 3.96f, .075f, 3.96f, Concrete);
         Box(0, .096f, 0, 3.78f, .012f, 3.78f, Asphalt);
         // Loading apron, parked trucks and a gate remain unchanged after placement.
-        for (int i = -2; i <= 2; i++) Box(i * .68f, .11f, 1.12f, .027f, .009f, 1.04f, Yellow);
-        Truck(-1.04f, 1.16f, color); Truck(.99f, 1.16f, color);
-        Box(-1.72f, .11f, 1.71f, .09f, .54f, .09f, White);
-        Box(-1.4f, .58f, 1.71f, .70f, .045f, .045f, Yellow);
-        Box(1.69f, .11f, .79f, .065f, .85f, .065f, Steel);
-        Box(1.69f, .80f, .79f, .40f, .28f, .06f, color);
+        for (int i = -4; i <= 4; i++) Box(i * .37f, .11f, 1.05f, .014f, .009f, .64f, Yellow);
+        Truck(-1.29f, 1.04f, color); Truck(.93f, 1.04f, color); Truck(.19f, 1.04f, White);
+        Box(-1.72f, .11f, 1.71f, .05f, .23f, .05f, White);
+        Box(-1.47f, .31f, 1.71f, .53f, .024f, .024f, Yellow);
+        Box(1.69f, .11f, .79f, .035f, .60f, .035f, Steel);
+        Box(1.69f, .58f, .79f, .27f, .19f, .04f, color);
         // Parcel symbol on the facility sign.
-        Box(1.69f, .86f, .825f, .20f, .16f, .015f, White);
-        Box(1.69f, .86f, .837f, .025f, .16f, .01f, color);
-        for (int i = 0; i < 3; i++) Box(-1.70f, .11f, -.3f - i * .32f, .23f, .20f, .23f, Wood);
+        Box(1.69f, .62f, .817f, .13f, .10f, .012f, White);
+        Box(1.69f, .62f, .828f, .016f, .10f, .01f, color);
+        for (int i = 0; i < 5; i++) Box(-1.70f, .11f, -.3f - i * .23f, .14f, .12f, .14f, Wood);
         switch (tile.LogisticsStyle)
         {
             case 0: // Broad distribution shed
@@ -91,8 +101,8 @@ internal static class LogisticsRenderer
             case 2: // Office-front urban depot
                 Warehouse(-.4f, -.60f, 2.1f, 1.8f, .90f, color); Office(1.12f, -.75f, .65f, 1.55f, 1.60f, color); break;
             case 3: // Container freight yard
-                for (int i = -1; i <= 1; i++) for (int j = 0; j < 2; j++) Container(i * .85f, -.4f - j * .95f, .11f, i == 0 ? color : Steel);
-                Container(-.85f, -1.35f, .49f, color); Container(.85f, -.4f, .49f, Yellow); break;
+                for (int i = -3; i <= 3; i++) for (int j = 0; j < 2; j++) Container(i * .42f, -.4f - j * .95f, .11f, i % 2 == 0 ? color : Steel);
+                Container(-.84f, -1.35f, .365f, color); Container(.84f, -.4f, .365f, Yellow); break;
             case 4: // Solar logistics hall
                 Warehouse(0, -.55f, 2.85f, 1.9f, .85f, color, 4); Solar(0, -.55f, 1.08f, 4); break;
             case 5: // Sawtooth industrial depot
@@ -117,7 +127,7 @@ internal static class LogisticsRenderer
             case 9: // Parcel sorting center
                 Warehouse(0, -.96f, 2.9f, 1.05f, .85f, color, 4);
                 Box(0, .29f, -.04f, 2.75f, .10f, .3f, Steel);
-                for (int i = -3; i <= 3; i++) Box(i * .37f, .39f, -.04f, .18f, .16f, .20f, Wood);
+                for (int i = -5; i <= 5; i++) Box(i * .23f, .39f, -.04f, .10f, .09f, .12f, Wood);
                 Box(-1.32f, .11f, -.04f, .07f, .18f, .22f, White); Box(1.32f, .11f, -.04f, .07f, .18f, .22f, White); break;
             case 10: // Refrigerated warehouse
                 Warehouse(-.25f, -.6f, 2.4f, 1.8f, 1.05f, color);

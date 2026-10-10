@@ -18,6 +18,13 @@ internal sealed class TrafficRenderer
     private double previousTime;
     internal int Count => cars.Count;
     internal IEnumerable<(int X, int Z)> Positions => cars.Select(car => (car.X, car.Z));
+    internal IEnumerable<(int X, int Z, float Progress)> Motion => cars.Select(car => (car.X, car.Z, car.Progress));
+    internal bool HasCarOnTile(int x, int z) => cars.Any(car => car.X == x && car.Z == z);
+    internal void AddCar(int x, int z, int entry, float progress = 0)
+    {
+        if (!roads.TryGetValue((x, z), out int mask)) return;
+        cars.Add(new Car { X = x, Z = z, Entry = entry, Exit = ChooseExit(mask, entry, 1), Progress = progress, Age = 1 });
+    }
 
     private struct Car
     {
@@ -50,7 +57,8 @@ internal sealed class TrafficRenderer
             Vector2.Normalize(3 * s * s * (b - a) + 6 * s * t * (c - b) + 3 * t * t * (d - c)));
     }
 
-    internal void Update(City city, IReadOnlyList<WorldChunk> chunks, int minX, int maxX, int minZ, int maxZ, double time)
+    internal void Update(City city, IReadOnlyList<WorldChunk> chunks, int minX, int maxX, int minZ, int maxZ, double time,
+        TrainTraffic? railway = null, bool allowSpawn = true)
     {
         if (previousCity != city)
         {
@@ -67,6 +75,8 @@ internal sealed class TrafficRenderer
             if (x < minX || x > maxX || z < minZ || z > maxZ) continue;
             roads[(x, z)] = city.RoadMask(x, z);
         }
+        var lanes = railway is null ? null : cars.GroupBy(c => (c.X, c.Z, c.Entry))
+            .ToDictionary(g => g.Key, g => g.Select(c => c.Progress).Order().ToArray());
         for (int i = cars.Count - 1; i >= 0; i--)
         {
             Car car = cars[i];
@@ -76,9 +86,21 @@ internal sealed class TrafficRenderer
             valid &= mask == 0 || ((mask & (1 << car.Entry)) != 0 && (mask & (1 << car.Exit)) != 0);
             if (valid && mask != 0)
             {
-                car.Progress += dt * TilesPerSecond;
+                int nx = car.X + (int)Arms[car.Exit].X, nz = car.Z + (int)Arms[car.Exit].Y;
+                bool stop = railway?.StopCars(nx, nz) == true;
+                float limit = stop ? .65f : 1.4f;
+                // Keep a queue behind the front vehicle instead of overlapping at the gate.
+                if (lanes is not null && lanes.TryGetValue((car.X, car.Z, car.Entry), out var lane))
+                    foreach (float progress in lane)
+                        if (progress > car.Progress)
+                        { limit = Math.Min(limit, Math.Max(car.Progress, progress - .32f)); break; }
+                float nextProgress = Math.Max(car.Progress, Math.Min(car.Progress + dt * TilesPerSecond, limit));
+                if (nextProgress == car.Progress) car.Age -= dt;
+                car.Progress = nextProgress;
                 if (car.Progress >= 1)
                 {
+                    if (lanes is not null && lanes.TryGetValue((nx, nz, (car.Exit + 2) % 4), out var nextLane) && nextLane[0] < .32f)
+                    { car.Progress = .99f; car.Age -= dt; cars[i] = car; continue; }
                     car.X += (int)Arms[car.Exit].X; car.Z += (int)Arms[car.Exit].Y;
                     car.Entry = (car.Exit + 2) % 4;
                     valid = roads.TryGetValue((car.X, car.Z), out int nextMask);
@@ -94,7 +116,9 @@ internal sealed class TrafficRenderer
         }
         foreach (var (cell, mask) in roads)
         {
+            if (!allowSpawn) break;
             if (cars.Count >= MaxCars) break;
+            if (railway is not null && city[cell.X, cell.Z].RailCrossing) continue;
             uint seed = Hash(cell.X, cell.Z);
             double offset = seed % 1800 / 100.0;
             bool newlyVisible = !previousRoads.TryGetValue(cell, out int oldMask) || oldMask != mask;
@@ -103,8 +127,12 @@ internal sealed class TrafficRenderer
             if (!spawn) continue;
             int entry = ChooseExit(mask, -1, seed);
             if (mask == 0) entry = 0;
-            cars.Add(new Car { X = cell.X, Z = cell.Z, Entry = entry, Exit = ChooseExit(mask, entry, seed >> 8),
-                Seed = seed, ColorIndex = (int)(seed % (uint)Colors.Length), Progress = (seed % 100) / 100f });
+            int exit = ChooseExit(mask, entry, seed >> 8);
+            float progress = (seed % 100) / 100f;
+            if (railway?.StopCars(cell.X + (int)Arms[exit].X, cell.Z + (int)Arms[exit].Y) == true) progress = Math.Min(progress, .65f);
+            if (railway is not null && cars.Any(other => other.X == cell.X && other.Z == cell.Z && other.Entry == entry)) continue;
+            cars.Add(new Car { X = cell.X, Z = cell.Z, Entry = entry, Exit = exit,
+                Seed = seed, ColorIndex = (int)(seed % (uint)Colors.Length), Progress = progress });
         }
         previousTime = time;
     }

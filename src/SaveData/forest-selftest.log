@@ -1,0 +1,143 @@
+PASS: Starter population and jobs
+PASS: Isolated residence has no road service
+PASS: Occupied cell cannot be overwritten
+PASS: Insufficient funds are rejected
+PASS: Monthly population growth and positive taxes
+PASS: Viable buildings grow to higher levels
+PASS: Monthly accounting balances
+PASS: Removing the external road disconnects the town
+PASS: Disconnected residents leave
+PASS: Restoring a road reconnects the town
+PASS: Save/load round trip
+PASS: Invalid save is rejected
+PASS: Connected parks improve nearby comfort
+PASS: Industry reduces nearby comfort
+PASS: High taxes reduce happiness
+PASS: Starter buildings have four valid face IDs per floor
+PASS: Real monthly growth reaches a third floor
+PASS: Growth appends new faces and preserves every existing floor
+PASS: Factory growth uses fixed-height floors
+PASS: Environment changes do not re-roll existing facades
+PASS: Demolition removes the building's face IDs
+PASS: Rebuilding creates a fresh set of face IDs
+PASS: Home: all 16 designs stay balanced in a uniform neighborhood
+PASS: Shop: all 16 designs stay balanced in a uniform neighborhood
+PASS: Factory: all 16 designs stay balanced in a uniform neighborhood
+PASS: Facing a road versus a park affects new facade selection
+PASS: Every facade and the appearance seed survive save/load
+PASS: Future construction and growth remain reproducible after loading
+PASS: Missing facade array is rejected
+PASS: Incorrect floor/face count is rejected
+PASS: Out-of-range facade ID is rejected
+PASS: Negative facade ID is rejected
+PASS: Invalid appearance seed is rejected
+PASS: Old saves require a new town
+PASS: Negative world coordinates use floor division
+PASS: New towns own exactly one 24 by 24 district
+PASS: Construction on unowned land is rejected without charging
+PASS: Insufficient land funds leave money and ownership unchanged
+PASS: Diagonal-only land purchase is rejected
+PASS: Adjacent purchase costs exactly one million and adds 576 tiles
+PASS: Duplicate purchase cannot charge again
+PASS: Western and northern land can be purchased
+PASS: Roads connect buildings across positive and negative chunk seams
+PASS: Park comfort crosses district boundaries
+PASS: Removing a boundary road disconnects the remote district
+PASS: Restoring the boundary road reconnects remote buildings
+PASS: An expanded map edge does not create a new external inlet
+PASS: The original inlet remains the source after westward expansion
+PASS: The original inlet can be restored
+PASS: Inactive building details are compressed
+PASS: Offscreen districts still pay taxes and maintenance every month
+PASS: Purchased districts, negative coordinates and facades survive saving
+PASS: Save/load preserves pending simulation months
+PASS: Staggered background updates keep catch-up bounded
+PASS: Re-entering all districts catches them up immediately
+PASS: Offscreen development is deferred between scheduled updates
+PASS: Catch-up grows new floors while preserving existing artwork
+PASS: Catch-up never charges or credits past months a second time
+PASS: Repeated camera visits do not advance the same month twice
+PASS: Tax changes settle the previous offscreen conditions first
+PASS: Duplicate saved districts are rejected
+PASS: Disconnected saved ownership is rejected
+PASS: Future simulation timestamps are rejected
+PASS: Pre-expansion saves get an explicit old-format error
+PASS: Road artwork follows additions/removals across a negative chunk seam: 0
+PASS: Road pattern selects straight, curve or intersection: 0
+PASS: Road artwork follows additions/removals across a negative chunk seam: 1
+PASS: Road pattern selects straight, curve or intersection: 1
+PASS: Road artwork follows additions/removals across a negative chunk seam: 2
+PASS: Road pattern selects straight, curve or intersection: 2
+PASS: Road artwork follows additions/removals across a negative chunk seam: 3
+PASS: Road pattern selects straight, curve or intersection: 3
+PASS: Road artwork follows additions/removals across a negative chunk seam: 4
+PASS: Road pattern selects straight, curve or intersection: 4
+PASS: Road artwork follows additions/removals across a negative chunk seam: 5
+PASS: Road pattern selects straight, curve or intersection: 5
+PASS: Road artwork follows additions/removals across a negative chunk seam: 6
+PASS: Road pattern selects straight, curve or intersection: 6
+PASS: Road artwork follows additions/removals across a negative chunk seam: 7
+PASS: Road pattern selects straight, curve or intersection: 7
+PASS: Road artwork follows additions/removals across a negative chunk seam: 8
+PASS: Road pattern selects straight, curve or intersection: 8
+PASS: Road artwork follows additions/removals across a negative chunk seam: 9
+PASS: Road pattern selects straight, curve or intersection: 9
+PASS: Road artwork follows additions/removals across a negative chunk seam: 10
+PASS: Road pattern selects straight, curve or intersection: 10
+PASS: Road artwork follows additions/removals across a negative chunk seam: 11
+PASS: Road pattern selects straight, curve or intersection: 11
+PASS: Road artwork follows additions/removals across a negative chunk seam: 12
+PASS: Road pattern selects straight, curve or intersection: 12
+PASS: Road artwork follows additions/removals across a negative chunk seam: 13
+PASS: Road pattern selects straight, curve or intersection: 13
+PASS: Road artwork follows additions/removals across a negative chunk seam: 14
+PASS: Road pattern selects straight, curve or intersection: 14
+PASS: Road artwork follows additions/removals across a negative chunk seam: 15
+PASS: Road pattern selects straight, curve or intersection: 15
+PASS: Water construction charges its listed price
+PASS: Water improves comfort without road access, within three tiles
+PASS: Water comfort shares the existing positive cap
+PASS: Existing roads become a five-tile bridge across a chunk boundary
+PASS: Water continues beneath bridges and roads retain service
+PASS: Removing water updates only affected bridges
+PASS: Removing a bridge disconnects roads and updates artwork
+PASS: North/south long bridges use the perpendicular water pair
+PASS: Roads can replace water and a junction is not a bridge
+PASS: Water and automatic bridges survive save/load
+PASS: Water supports maintenance and cold chunk compression
+PASS: Shift at right-button press starts panning
+PASS: Releasing Shift mid-drag does not switch to rotation
+PASS: Pressing Shift during rotation does not switch modes
+PASS: Losing focus cancels the drag
+PASS: Dragging from UI into the map does not capture the camera
+PASS: Panning moves the ground in the mouse direction
+PASS: Water removes exactly one land tile and sits below ground
+PASS: Purchased chunk seams have no underground blocking walls
+PASS: Banks slope from ground level down to the water surface
+PASS: Removing boundary water restores ground and invalidates the neighboring bank
+PASS: Automatic bridges also remove the land beneath their decks
+PASS: Losing bridge conditions restores the ground beneath the road
+PASS: Land purchase 1 has the expected increasing price
+PASS: Insufficient funds preserve land, money and price and report current cost
+PASS: Duplicate and nonadjacent purchases do not raise the price
+PASS: Successful purchase charges and reports the old price then raises the next price
+PASS: Next land price survives save/load using existing district data
+PASS: Land purchase 2 has the expected increasing price
+PASS: Insufficient funds preserve land, money and price and report current cost
+PASS: Duplicate and nonadjacent purchases do not raise the price
+PASS: Successful purchase charges and reports the old price then raises the next price
+PASS: Next land price survives save/load using existing district data
+PASS: Land purchase 3 has the expected increasing price
+PASS: Insufficient funds preserve land, money and price and report current cost
+PASS: Duplicate and nonadjacent purchases do not raise the price
+PASS: Successful purchase charges and reports the old price then raises the next price
+PASS: Next land price survives save/load using existing district data
+PASS: Land purchase 4 has the expected increasing price
+PASS: Insufficient funds preserve land, money and price and report current cost
+PASS: Duplicate and nonadjacent purchases do not raise the price
+PASS: Successful purchase charges and reports the old price then raises the next price
+System.UnauthorizedAccessException: Access to the path is denied.
+   at System.IO.FileSystem.MoveFile(String sourceFullPath, String destFullPath, Boolean overwrite)
+   at GrowUpTown.City.Save(String path) in C:\home\Dev\RaylibTest20260900\GrowUpTown\City.cs:line 398
+   at GrowUpTown.LandPriceTests.Run(Action`2 check, String path) in C:\home\Dev\RaylibTest20260900\GrowUpTown\LandPriceTests.cs:line 23
+   at GrowUpTown.SelfTests.Run() in C:\home\Dev\RaylibTest20260900\GrowUpTown\SelfTests.cs:line 66

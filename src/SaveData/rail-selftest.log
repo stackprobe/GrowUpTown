@@ -1,0 +1,665 @@
+PASS: Starter population and jobs
+PASS: Isolated residence has no road service
+PASS: Occupied cell cannot be overwritten
+PASS: Insufficient funds are rejected
+PASS: Monthly population growth and positive taxes
+PASS: Viable buildings grow to higher levels
+PASS: Monthly accounting balances
+PASS: Removing the external road disconnects the town
+PASS: Disconnected residents leave
+PASS: Restoring a road reconnects the town
+PASS: Save/load round trip
+PASS: Invalid save is rejected
+PASS: Connected parks improve nearby comfort
+PASS: Industry reduces nearby comfort
+PASS: High taxes reduce happiness
+PASS: Starter buildings have four valid face IDs per floor
+PASS: Real monthly growth reaches a third floor
+PASS: Growth appends new faces and preserves every existing floor
+PASS: Factory growth uses fixed-height floors
+PASS: Environment changes do not re-roll existing facades
+PASS: Demolition removes the building's face IDs
+PASS: Rebuilding creates a fresh set of face IDs
+PASS: Home: all 16 designs stay balanced in a uniform neighborhood
+PASS: Shop: all 16 designs stay balanced in a uniform neighborhood
+PASS: Factory: all 16 designs stay balanced in a uniform neighborhood
+PASS: Facing a road versus a park affects new facade selection
+PASS: Every facade and the appearance seed survive save/load
+PASS: Future construction and growth remain reproducible after loading
+PASS: Missing facade array is rejected
+PASS: Incorrect floor/face count is rejected
+PASS: Out-of-range facade ID is rejected
+PASS: Negative facade ID is rejected
+PASS: Invalid appearance seed is rejected
+PASS: Old saves require a new town
+PASS: Negative world coordinates use floor division
+PASS: New towns own exactly one 24 by 24 district
+PASS: Construction on unowned land is rejected without charging
+PASS: Insufficient land funds leave money and ownership unchanged
+PASS: Diagonal-only land purchase is rejected
+PASS: Adjacent purchase costs exactly one million and adds 576 tiles
+PASS: Duplicate purchase cannot charge again
+PASS: Western and northern land can be purchased
+PASS: Roads connect buildings across positive and negative chunk seams
+PASS: Park comfort crosses district boundaries
+PASS: Removing a boundary road disconnects the remote district
+PASS: Restoring the boundary road reconnects remote buildings
+PASS: An expanded map edge does not create a new external inlet
+PASS: The original inlet remains the source after westward expansion
+PASS: The original inlet can be restored
+PASS: Inactive building details are compressed
+PASS: Offscreen districts still pay taxes and maintenance every month
+PASS: Purchased districts, negative coordinates and facades survive saving
+PASS: Save/load preserves pending simulation months
+PASS: Staggered background updates keep catch-up bounded
+PASS: Re-entering all districts catches them up immediately
+PASS: Offscreen development is deferred between scheduled updates
+PASS: Catch-up grows new floors while preserving existing artwork
+PASS: Catch-up never charges or credits past months a second time
+PASS: Repeated camera visits do not advance the same month twice
+PASS: Tax changes settle the previous offscreen conditions first
+PASS: Duplicate saved districts are rejected
+PASS: Disconnected saved ownership is rejected
+PASS: Future simulation timestamps are rejected
+PASS: Pre-expansion saves get an explicit old-format error
+PASS: Road artwork follows additions/removals across a negative chunk seam: 0
+PASS: Road pattern selects straight, curve or intersection: 0
+PASS: Road artwork follows additions/removals across a negative chunk seam: 1
+PASS: Road pattern selects straight, curve or intersection: 1
+PASS: Road artwork follows additions/removals across a negative chunk seam: 2
+PASS: Road pattern selects straight, curve or intersection: 2
+PASS: Road artwork follows additions/removals across a negative chunk seam: 3
+PASS: Road pattern selects straight, curve or intersection: 3
+PASS: Road artwork follows additions/removals across a negative chunk seam: 4
+PASS: Road pattern selects straight, curve or intersection: 4
+PASS: Road artwork follows additions/removals across a negative chunk seam: 5
+PASS: Road pattern selects straight, curve or intersection: 5
+PASS: Road artwork follows additions/removals across a negative chunk seam: 6
+PASS: Road pattern selects straight, curve or intersection: 6
+PASS: Road artwork follows additions/removals across a negative chunk seam: 7
+PASS: Road pattern selects straight, curve or intersection: 7
+PASS: Road artwork follows additions/removals across a negative chunk seam: 8
+PASS: Road pattern selects straight, curve or intersection: 8
+PASS: Road artwork follows additions/removals across a negative chunk seam: 9
+PASS: Road pattern selects straight, curve or intersection: 9
+PASS: Road artwork follows additions/removals across a negative chunk seam: 10
+PASS: Road pattern selects straight, curve or intersection: 10
+PASS: Road artwork follows additions/removals across a negative chunk seam: 11
+PASS: Road pattern selects straight, curve or intersection: 11
+PASS: Road artwork follows additions/removals across a negative chunk seam: 12
+PASS: Road pattern selects straight, curve or intersection: 12
+PASS: Road artwork follows additions/removals across a negative chunk seam: 13
+PASS: Road pattern selects straight, curve or intersection: 13
+PASS: Road artwork follows additions/removals across a negative chunk seam: 14
+PASS: Road pattern selects straight, curve or intersection: 14
+PASS: Road artwork follows additions/removals across a negative chunk seam: 15
+PASS: Road pattern selects straight, curve or intersection: 15
+PASS: Water construction charges its listed price
+PASS: Water improves comfort without road access, within three tiles
+PASS: Water comfort shares the existing positive cap
+PASS: Existing roads become a five-tile bridge across a chunk boundary
+PASS: Water continues beneath bridges and roads retain service
+PASS: Removing water updates only affected bridges
+PASS: Removing a bridge disconnects roads and updates artwork
+PASS: North/south long bridges use the perpendicular water pair
+PASS: Roads can replace water and a junction is not a bridge
+PASS: Water and automatic bridges survive save/load
+PASS: Water supports maintenance and cold chunk compression
+PASS: Shift at right-button press starts panning
+PASS: Releasing Shift mid-drag does not switch to rotation
+PASS: Pressing Shift during rotation does not switch modes
+PASS: Losing focus cancels the drag
+PASS: Dragging from UI into the map does not capture the camera
+PASS: Panning moves the ground in the mouse direction
+PASS: Water removes exactly one land tile and sits below ground
+PASS: Purchased chunk seams have no underground blocking walls
+PASS: Banks slope from ground level down to the water surface
+PASS: Removing boundary water restores ground and invalidates the neighboring bank
+PASS: Automatic bridges also remove the land beneath their decks
+PASS: Losing bridge conditions restores the ground beneath the road
+PASS: Land purchase 1 has the expected increasing price
+PASS: Insufficient funds preserve land, money and price and report current cost
+PASS: Duplicate and nonadjacent purchases do not raise the price
+PASS: Successful purchase charges and reports the old price then raises the next price
+PASS: Next land price survives save/load using existing district data
+PASS: Land purchase 2 has the expected increasing price
+PASS: Insufficient funds preserve land, money and price and report current cost
+PASS: Duplicate and nonadjacent purchases do not raise the price
+PASS: Successful purchase charges and reports the old price then raises the next price
+PASS: Next land price survives save/load using existing district data
+PASS: Land purchase 3 has the expected increasing price
+PASS: Insufficient funds preserve land, money and price and report current cost
+PASS: Duplicate and nonadjacent purchases do not raise the price
+PASS: Successful purchase charges and reports the old price then raises the next price
+PASS: Next land price survives save/load using existing district data
+PASS: Land purchase 4 has the expected increasing price
+PASS: Insufficient funds preserve land, money and price and report current cost
+PASS: Duplicate and nonadjacent purchases do not raise the price
+PASS: Successful purchase charges and reports the old price then raises the next price
+PASS: Next land price survives save/load using existing district data
+PASS: New town resets the land purchase price
+PASS: Traffic follows all 15 road connection patterns, including dead ends
+PASS: Traffic positions and headings match at tile boundaries
+PASS: Traffic reaches every added road, bridge, isolated tile and chunk seam without inlet service
+PASS: Paused traffic retains its vehicles
+PASS: Bulldozed road immediately loses its traffic
+PASS: Offscreen traffic is discarded even within a visible chunk
+PASS: New or loaded towns discard prior traffic
+PASS: Dense visible roads respect the fixed traffic budget
+PASS: All 16 park patterns connect paths in matching directions
+PASS: Adding or removing any adjacent park changes its neighbor's layout and decoration
+PASS: Diagonal parks, non-park neighbors and monthly updates preserve park appearance
+PASS: Park paths connect across negative chunk boundaries
+PASS: Rejected construction does not alter a park
+PASS: Park appearances survive save/load without additional save fields
+PASS: Removing a park across a chunk boundary closes the path and changes decoration
+PASS: Placed isolated parks use all six decorative styles
+PASS: All sixteen road adjacency patterns extend park walkways without changing decorations
+PASS: Park chains receive inlet-road access but diagonal parks do not
+PASS: Park walkways cannot connect homes, industry or a separate road network
+PASS: Park walkways extend to a park and a road simultaneously
+PASS: Removing a middle park immediately disconnects the downstream parks
+PASS: Restoring a park reconnects the chain
+PASS: Park access across negative chunk boundaries survives compression and saving
+PASS: Removing inlet access disconnects every park cluster
+PASS: Disconnected park provides exactly thirty percent comfort within its existing range
+PASS: Road connection upgrades park comfort from three to ten
+PASS: Road removal restores thirty percent park comfort
+PASS: Removing adjacent road retracts the walkway
+PASS: Disconnected grand park provides six comfort, counted once
+PASS: Access crosses entire grand-park footprints and continues into other parks
+PASS: Walkway reaches both the road and the grand park
+PASS: Breaking grand-park access disconnects the chain without changing its fixed appearance
+PASS: Version 3 saves predating grand park fields remain compatible
+PASS: Grand park rejects a partially unowned footprint without spending
+PASS: Grand park rejects occupied interior cells atomically
+PASS: Grand park occupies 4x4 and connects through the far edge as one building
+PASS: Grand park improves all four sides up to distance five, counted once
+PASS: Grand park improves super residential comfort
+PASS: Touching grand parks choose different designs
+PASS: Nearby grand parks avoid existing designs before considering environmental affinity
+PASS: Grand park level and appearance stay fixed over years and neighborhood edits
+PASS: Grand park footprint, design and orientation survive saving
+PASS: Two disconnected grand parks each provide thirty percent comfort
+PASS: Demolishing a grand park interior removes all sixteen cells for one fee
+PASS: Grand park spans negative chunk boundaries and compressed save data
+PASS: Grand park maintenance is charged once per building
+PASS: Cross-chunk grand park demolition removes both chunks' cells
+PASS: Invalid saved grand park appearance is rejected
+PASS: All sixteen grand park designs can be selected
+PASS: Waterfront surroundings favor lake, Japanese or wetland park designs
+PASS: Grand park entrance orientation favors the road-facing side
+PASS: Pre-supermarket Version 3 saves remain compatible
+PASS: Supermarket rejects partially unowned land without charging
+PASS: Supermarket interior overlap rejects the whole placement
+PASS: Supermarket requires its full construction cost
+PASS: Supermarket occupies sixteen cells and connects through its outer edge
+PASS: Supermarket comfort uses distance five on every side and excludes distant diagonals
+PASS: Nearby housing improves and connected shop tax base rises by twenty percent
+PASS: Supermarket maintenance is charged once
+PASS: Supermarket commercial boost reaches monthly tax receipts
+PASS: Touching and nearby supermarkets avoid each other's designs
+PASS: Overlapping supermarket service does not stack residential or commercial bonuses
+PASS: Supermarket level, design and orientation remain fixed over years and nearby construction
+PASS: Supermarket appearance and service survive saving and reloading
+PASS: Road disconnection removes supermarket employment and both neighborhood effects
+PASS: Supermarket demolition from any occupied tile removes all cells for one fee
+PASS: Shop receives only its commercial portion of supermarket benefits
+PASS: Removing supermarket reverses Shop tax bonus immediately
+PASS: SuperMixed receives only its commercial portion of supermarket benefits
+PASS: Removing supermarket reverses SuperMixed tax bonus immediately
+PASS: SuperIndustryCommerce receives only its commercial portion of supermarket benefits
+PASS: Removing supermarket reverses SuperIndustryCommerce tax bonus immediately
+PASS: UltraCity receives only its commercial portion of supermarket benefits
+PASS: Removing supermarket reverses UltraCity tax bonus immediately
+PASS: Factory receives only its commercial portion of supermarket benefits
+PASS: Removing supermarket reverses Factory tax bonus immediately
+PASS: Commercial service has the same exact five-cell boundary
+PASS: Housing can receive local comfort while requiring its own road for occupancy
+PASS: Supermarket and commercial service survive cold-chunk compression
+PASS: Cross-boundary supermarket effects and appearance survive reload
+PASS: Cross-boundary removal clears all supermarket cells and nearby commercial effect
+PASS: Invalid saved supermarket MarketStyle is rejected
+PASS: Invalid saved supermarket MarketRotation is rejected
+PASS: Invalid saved supermarket Level is rejected
+PASS: All sixteen supermarket designs can be selected
+PASS: Waterfront supermarket placement favors deck or coastal designs
+PASS: Supermarket storefront faces the adjacent road at construction
+PASS: Pre-logistics Version 3 saves remain compatible
+PASS: Logistics center rejects partially unowned footprints atomically
+PASS: Logistics center rejects occupied interior cells
+PASS: Logistics center requires full construction funds
+PASS: Logistics center occupies 4x4 and connects at its far edge
+PASS: Logistics effect extends exactly five Manhattan cells from every footprint edge
+PASS: Logistics center adds 96 jobs and boosts industrial and commercial tax bases by twenty percent
+PASS: Logistics maintenance counts once per building
+PASS: Logistics bonus reaches actual monthly tax receipts
+PASS: Logistics center does not add residential effects or industrial pollution
+PASS: Nearby and touching logistics centers select distinct designs
+PASS: Multiple logistics centers never stack their bonuses
+PASS: Logistics center level and appearance remain fixed over time and nearby construction
+PASS: Logistics appearance, orientation and service survive save/load
+PASS: Road disconnection removes logistics employment and both neighborhood effects
+PASS: Logistics demolition from an interior tile removes all sixteen cells for one fee
+PASS: Shop receives logistics benefits for its business portions
+PASS: Removing logistics center immediately reverses Shop bonus
+PASS: Factory receives logistics benefits for its business portions
+PASS: Removing logistics center immediately reverses Factory bonus
+PASS: SuperMixed receives logistics benefits for its business portions
+PASS: Removing logistics center immediately reverses SuperMixed bonus
+PASS: SuperFactory receives logistics benefits for its business portions
+PASS: Removing logistics center immediately reverses SuperFactory bonus
+PASS: SuperIndustryCommerce receives logistics benefits for its business portions
+PASS: Removing logistics center immediately reverses SuperIndustryCommerce bonus
+PASS: UltraCity receives logistics benefits for its business portions
+PASS: Removing logistics center immediately reverses UltraCity bonus
+PASS: Logistics range uses the target's full footprint, not only its anchor
+PASS: Supermarket and logistics bonuses add without compounding or boosting the special facilities themselves
+PASS: Commercial logistics service respects exact range boundary
+PASS: Logistics data can be compressed offscreen
+PASS: Cross-chunk logistics footprint and bonuses survive compression, time and save/load
+PASS: Cross-chunk logistics demolition clears every occupied cell and industrial bonus
+PASS: Invalid logistics LogisticsStyle is rejected on load
+PASS: Invalid logistics LogisticsRotation is rejected on load
+PASS: Invalid logistics Level is rejected on load
+PASS: All sixteen logistics designs are selectable
+PASS: Waterfront logistics placement favors container or refrigerated depots
+PASS: Logistics loading apron faces adjacent roads when constructed
+PASS: Rail locked in year 39 December
+PASS: Rail unlocks in year 40 January
+PASS: Station locked in year 39 December
+PASS: Station unlocks in year 40 January
+PASS: Isolated stations have no effect
+PASS: Two distinct stations activate comfort and commercial service through track
+PASS: Railway service does not substitute for road access
+PASS: Rail service has a bounded five-cell radius
+PASS: Road over rail creates a crossing with independent road and railway masks
+PASS: Crossing, railway service and station design survive saving
+PASS: Cutting track immediately removes both station effects
+PASS: Rail over road reconnects stations without allowing duplicate track charges
+PASS: Environment changes and monthly simulation preserve station design and orientation
+PASS: Demolition from a station child clears the whole footprint and deactivates the remaining station
+PASS: Touching stations and a single station's own cells do not count as a railway connection
+PASS: Track outside adjacent stations activates both
+PASS: Rail bridges carry station connections across chunk boundaries
+PASS: Cold chunks preserve station connections and bridges
+PASS: Sixteen trackside stations avoid nearby designs from the sixteen-style palette
+PASS: Invalid station design is rejected on load
+PASS: Park and commercial surroundings select fitting station architecture families
+PASS: Tracks connect through a middle station to the rest of the network
+PASS: Overlapping stations apply a single twenty-percent commercial tax bonus
+PASS: Station maintenance counts once per footprint and rails charge per tile
+PASS: Station commercial bonus reaches actual monthly income
+PASS: Track can replace water and has no standalone comfort effect
+PASS: All sixteen track connection patterns support ends, turns and junctions
+PASS: Buffer stops face the closed end in all four directions and are absent on through routes
+PASS: T junction 7 has a complete through route and two connecting turnouts
+PASS: T junction 11 has a complete through route and two connecting turnouts
+PASS: T junction 13 has a complete through route and two connecting turnouts
+PASS: T junction 14 has a complete through route and two connecting turnouts
+PASS: Diamond crossing continues both straight tracks through the center
+PASS: Stations beside a straight railway receive service without branches into the buildings
+PASS: Loading preserves station service without adding station-facing rails
+PASS: Station without track is rejected without charging or occupying land
+PASS: One adjacent track cell is insufficient for a station
+PASS: Two track cells on different sides do not satisfy the platform requirement
+PASS: Diagonal track does not count toward the platform edge
+PASS: Two dead-end track cells do not allow station placement
+PASS: Two aligned straight track cells allow station placement
+PASS: Valid track does not bypass footprint occupancy checks
+PASS: Platform side 0, cell 0, mask 0: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 1: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 2: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 3: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 4: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 5: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 6: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 7: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 8: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 9: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 10: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 11: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 12: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 13: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 14: both rails must be straight along the platform
+PASS: Platform side 0, cell 0, mask 15: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 0: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 1: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 2: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 3: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 4: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 5: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 6: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 7: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 8: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 9: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 10: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 11: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 12: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 13: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 14: both rails must be straight along the platform
+PASS: Platform side 0, cell 1, mask 15: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 0: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 1: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 2: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 3: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 4: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 5: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 6: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 7: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 8: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 9: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 10: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 11: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 12: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 13: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 14: both rails must be straight along the platform
+PASS: Platform side 1, cell 0, mask 15: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 0: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 1: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 2: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 3: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 4: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 5: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 6: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 7: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 8: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 9: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 10: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 11: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 12: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 13: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 14: both rails must be straight along the platform
+PASS: Platform side 1, cell 1, mask 15: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 0: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 1: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 2: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 3: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 4: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 5: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 6: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 7: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 8: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 9: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 10: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 11: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 12: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 13: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 14: both rails must be straight along the platform
+PASS: Platform side 2, cell 0, mask 15: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 0: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 1: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 2: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 3: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 4: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 5: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 6: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 7: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 8: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 9: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 10: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 11: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 12: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 13: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 14: both rails must be straight along the platform
+PASS: Platform side 2, cell 1, mask 15: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 0: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 1: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 2: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 3: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 4: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 5: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 6: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 7: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 8: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 9: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 10: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 11: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 12: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 13: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 14: both rails must be straight along the platform
+PASS: Platform side 3, cell 0, mask 15: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 0: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 1: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 2: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 3: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 4: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 5: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 6: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 7: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 8: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 9: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 10: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 11: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 12: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 13: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 14: both rails must be straight along the platform
+PASS: Platform side 3, cell 1, mask 15: both rails must be straight along the platform
+PASS: Platform side 0, road side 0: placement is allowed, including crossings
+PASS: Platform side 0, road side 0: platform and entrance are selected independently
+PASS: Platform side 0, road side 0: orientation survives save/load
+PASS: Platform side 0, road side 1: placement is allowed, including crossings
+PASS: Platform side 0, road side 1: platform and entrance are selected independently
+PASS: Platform side 0, road side 1: orientation survives save/load
+PASS: Platform side 0, road side 2: placement is allowed, including crossings
+PASS: Platform side 0, road side 2: platform and entrance are selected independently
+PASS: Platform side 0, road side 2: orientation survives save/load
+PASS: Platform side 0, road side 3: placement is allowed, including crossings
+PASS: Platform side 0, road side 3: platform and entrance are selected independently
+PASS: Platform side 0, road side 3: orientation survives save/load
+PASS: Platform side 1, road side 0: placement is allowed, including crossings
+PASS: Platform side 1, road side 0: platform and entrance are selected independently
+PASS: Platform side 1, road side 0: orientation survives save/load
+PASS: Platform side 1, road side 1: placement is allowed, including crossings
+PASS: Platform side 1, road side 1: platform and entrance are selected independently
+PASS: Platform side 1, road side 1: orientation survives save/load
+PASS: Platform side 1, road side 2: placement is allowed, including crossings
+PASS: Platform side 1, road side 2: platform and entrance are selected independently
+PASS: Platform side 1, road side 2: orientation survives save/load
+PASS: Platform side 1, road side 3: placement is allowed, including crossings
+PASS: Platform side 1, road side 3: platform and entrance are selected independently
+PASS: Platform side 1, road side 3: orientation survives save/load
+PASS: Platform side 2, road side 0: placement is allowed, including crossings
+PASS: Platform side 2, road side 0: platform and entrance are selected independently
+PASS: Platform side 2, road side 0: orientation survives save/load
+PASS: Platform side 2, road side 1: placement is allowed, including crossings
+PASS: Platform side 2, road side 1: platform and entrance are selected independently
+PASS: Platform side 2, road side 1: orientation survives save/load
+PASS: Platform side 2, road side 2: placement is allowed, including crossings
+PASS: Platform side 2, road side 2: platform and entrance are selected independently
+PASS: Platform side 2, road side 2: orientation survives save/load
+PASS: Platform side 2, road side 3: placement is allowed, including crossings
+PASS: Platform side 2, road side 3: platform and entrance are selected independently
+PASS: Platform side 2, road side 3: orientation survives save/load
+PASS: Platform side 3, road side 0: placement is allowed, including crossings
+PASS: Platform side 3, road side 0: platform and entrance are selected independently
+PASS: Platform side 3, road side 0: orientation survives save/load
+PASS: Platform side 3, road side 1: placement is allowed, including crossings
+PASS: Platform side 3, road side 1: platform and entrance are selected independently
+PASS: Platform side 3, road side 1: orientation survives save/load
+PASS: Platform side 3, road side 2: placement is allowed, including crossings
+PASS: Platform side 3, road side 2: platform and entrance are selected independently
+PASS: Platform side 3, road side 2: orientation survives save/load
+PASS: Platform side 3, road side 3: placement is allowed, including crossings
+PASS: Platform side 3, road side 3: platform and entrance are selected independently
+PASS: Platform side 3, road side 3: orientation survives save/load
+PASS: Without roads, a station uses the entrance opposite the railway
+PASS: Existing station design and orientation remain fixed after surroundings change
+PASS: Older station saves without entrance metadata remain loadable
+PASS: Invalid entrance side -1 is rejected
+PASS: Invalid entrance side 4 is rejected
+PASS: Multiple railway and road sides deterministically prefer opposing platform and entrance
+PASS: An opposite road is preferred even when a side road covers more cells
+PASS: Platform and entrance persist for stations spanning four chunks and cold storage
+PASS: Trains travel straight across diamonds and can take either exit at T junctions
+PASS: Train routes meet exactly at rail edges with continuous headings
+PASS: Diamond crossing does not join perpendicular station networks
+PASS: Stations on the same straight route connect through a diamond
+PASS: Diamond direction separation survives save/load
+PASS: Converting a diamond to a T junction joins its station networks
+PASS: All three carriages are visible from the moment a train spawns
+PASS: Train stops once for three seconds at a two-cell platform and then resumes
+PASS: The entire three-car train stops centered within the platform, including straight crossing rails
+PASS: Pausing freezes train position and station dwell time
+PASS: Crossing is normally open and unlit
+PASS: Approach closes the crossing, stops cars, holds through passage, then reopens and releases traffic
+PASS: The crossing stays fully closed until the last of all three carriages clears it
+PASS: Train waits before a closed crossing while a car is still inside
+PASS: Pause freezes barrier animation and crossing wait
+PASS: Train proceeds when the crossing is clear
+PASS: Demolition removes affected trains and releases the crossing
+PASS: New city clears train and crossing state
+PASS: Automatic spawning treats a diamond as two independent railway routes
+PASS: A long route retains one train rather than spawning opposing trains
+PASS: Camera movement removes trains outside the visible tracks
+PASS: Perpendicular trains wait their turn and both clear the diamond crossing
+PASS: Many visible railway networks respect the train rendering budget
+PASS: Building track does not immediately spawn a train
+PASS: Track edits do not advance the independent spawn timer
+PASS: A full train appears within two seconds without any additional player action
+PASS: Unrelated track construction neither creates nor moves the existing train while paused
+PASS: Removing future track replans the route without replacing or teleporting intact carriages
+PASS: Offscreen train fixture lies outside the actual visible screen
+PASS: A train hidden in render margins does not prevent spawning on actual visible rails
+PASS: Visible rails retain a visible train most of the time and refill within about two seconds without player input
+PASS: Moving the camera while paused does not immediately spawn or teleport a train
+PASS: The spawn timer restores a visible train after camera movement without construction
+PASS: Automatic spawning tries the opposite direction to fit all carriages away from an open crossing
+PASS: Direction 0: train centers all carriages on the platform
+PASS: Direction 0: repeated terminal switchbacks preserve carriage positions and body headings after a two-second dwell
+PASS: Direction 1: train centers all carriages on the platform
+PASS: Direction 1: repeated terminal switchbacks preserve carriage positions and body headings after a two-second dwell
+PASS: Direction 2: train centers all carriages on the platform
+PASS: Direction 2: repeated terminal switchbacks preserve carriage positions and body headings after a two-second dwell
+PASS: Direction 3: train centers all carriages on the platform
+PASS: Direction 3: repeated terminal switchbacks preserve carriage positions and body headings after a two-second dwell
+PASS: Switchbacks also preserve carriage positions and orientations when the rear cars are on a curve
+PASS: New town starts with normal tools available and all advanced categories locked
+PASS: SuperMixed remains locked in December before its unlock year
+PASS: SuperMixed cannot bypass its lock through construction calls
+PASS: SuperMixed lock survives save/load before the boundary
+PASS: SuperMixed unlocks exactly in January of displayed year 10
+PASS: SuperMixed can be built after the boundary
+PASS: SuperMixed stays unlocked and built after reloading
+PASS: SuperFactory remains locked in December before its unlock year
+PASS: SuperFactory cannot bypass its lock through construction calls
+PASS: SuperFactory lock survives save/load before the boundary
+PASS: SuperFactory unlocks exactly in January of displayed year 15
+PASS: SuperFactory can be built after the boundary
+PASS: SuperFactory stays unlocked and built after reloading
+PASS: SuperIndustryCommerce remains locked in December before its unlock year
+PASS: SuperIndustryCommerce cannot bypass its lock through construction calls
+PASS: SuperIndustryCommerce lock survives save/load before the boundary
+PASS: SuperIndustryCommerce unlocks exactly in January of displayed year 12
+PASS: SuperIndustryCommerce can be built after the boundary
+PASS: SuperIndustryCommerce stays unlocked and built after reloading
+PASS: SuperHome remains locked in December before its unlock year
+PASS: SuperHome cannot bypass its lock through construction calls
+PASS: SuperHome lock survives save/load before the boundary
+PASS: SuperHome unlocks exactly in January of displayed year 20
+PASS: SuperHome can be built after the boundary
+PASS: SuperHome stays unlocked and built after reloading
+PASS: UltraCity remains locked in December before its unlock year
+PASS: UltraCity cannot bypass its lock through construction calls
+PASS: UltraCity lock survives save/load before the boundary
+PASS: UltraCity unlocks exactly in January of displayed year 50
+PASS: UltraCity can be built after the boundary
+PASS: UltraCity stays unlocked and built after reloading
+PASS: GrandPark remains locked in December before its unlock year
+PASS: GrandPark cannot bypass its lock through construction calls
+PASS: GrandPark lock survives save/load before the boundary
+PASS: GrandPark unlocks exactly in January of displayed year 30
+PASS: GrandPark can be built after the boundary
+PASS: GrandPark stays unlocked and built after reloading
+PASS: Supermarket remains locked in December before its unlock year
+PASS: Supermarket cannot bypass its lock through construction calls
+PASS: Supermarket lock survives save/load before the boundary
+PASS: Supermarket unlocks exactly in January of displayed year 30
+PASS: Supermarket can be built after the boundary
+PASS: Supermarket stays unlocked and built after reloading
+PASS: LogisticsCenter remains locked in December before its unlock year
+PASS: LogisticsCenter cannot bypass its lock through construction calls
+PASS: LogisticsCenter lock survives save/load before the boundary
+PASS: LogisticsCenter unlocks exactly in January of displayed year 30
+PASS: LogisticsCenter can be built after the boundary
+PASS: LogisticsCenter stays unlocked and built after reloading
+PASS: Year 5 unlocks exactly the expected buildings
+PASS: Year 5 has the expected special menu availability
+PASS: Year 10 unlocks exactly the expected buildings
+PASS: Year 10 has the expected special menu availability
+PASS: Year 12 unlocks exactly the expected buildings
+PASS: Year 12 has the expected special menu availability
+PASS: Year 15 unlocks exactly the expected buildings
+PASS: Year 15 has the expected special menu availability
+PASS: Year 20 unlocks exactly the expected buildings
+PASS: Year 20 has the expected special menu availability
+PASS: Year 30 unlocks exactly the expected buildings
+PASS: Year 30 has the expected special menu availability
+PASS: Year 50 unlocks exactly the expected buildings
+PASS: Year 50 has the expected special menu availability
+PASS: Legacy early-game special buildings survive loading without unlocking new construction
+PASS: Legacy locked-category buildings remain demolishable
+PASS: Existing version 3 saves without footprint fields still load
+PASS: Super building connects through a non-anchor edge
+PASS: Mixed building occupies four cells and counts housing/jobs once
+PASS: Overlap and unowned footprint reject atomically
+PASS: Mixed building monthly population and maintenance count once
+PASS: Super building save/load resolves occupied cells
+PASS: Demolition from any occupied cell removes entire building
+PASS: Four-chunk footprint survives compression and save/load
+PASS: Cross-chunk demolition removes all four cells
+PASS: SuperMixed grows to level 6, caps there and preserves original faces
+PASS: SuperMixed level 6 round trip
+PASS: SuperMixed disconnects when the entrance road is removed
+PASS: SuperFactory grows to level 6, caps there and preserves original faces
+PASS: SuperFactory level 6 round trip
+PASS: SuperFactory disconnects when the entrance road is removed
+PASS: SuperIndustryCommerce grows to level 6, caps there and preserves original faces
+PASS: SuperIndustryCommerce level 6 round trip
+PASS: SuperIndustryCommerce disconnects when the entrance road is removed
+PASS: Malformed footprint save is rejected
+PASS: Industry-commerce charges once, occupies 2x2 and connects at its outer edge
+PASS: Industry-commerce combines industrial and commercial jobs and tax base without housing
+PASS: Industry-commerce overlap and unowned footprint are rejected without partial writes
+PASS: Industry-commerce production affects nearby housing only within pollution range
+PASS: Industry-commerce needs workers to grow and pays maintenance once even when idle
+PASS: Industry-commerce demolition from a secondary cell removes the full building
+PASS: Industry-commerce level 6 survives four-chunk compression and save/load
+PASS: Industry-commerce saves above level 6 are rejected
+PASS: Residential tower occupies 2x2, charges once and connects at its outer edge
+PASS: Residential tower adds housing without jobs or business taxes
+PASS: Residential tower rejects overlaps and unowned footprints atomically
+PASS: Residential tower admits 32 residents and charges maintenance once
+PASS: Residential tower naturally grows to level 6 with stable existing floor styles
+PASS: Residential tower population and level survive save/load
+PASS: Disconnected tower loses service and residents
+PASS: Residential tower demolition from secondary cell removes all residents and cells
+PASS: Residential tower survives compression across four chunk boundaries
+PASS: Residential tower levels above six are rejected when loading
+PASS: Neighboring ultra buildings have distinct roof silhouettes
+PASS: Neighboring ultra buildings have distinct multi-face facade patterns
+PASS: Every ultra face combines residential green, commercial blue and industrial orange across its full width
+PASS: Ultra colors and details retain their identity through growth and save/load
+PASS: Ultra city occupies nine cells and connects through its far edge
+PASS: Ultra city combines housing, commercial and industrial income exactly once
+PASS: Ultra city overlap and partially unowned 3x3 footprint are rejected atomically
+PASS: Ultra city industry causes no pollution inside or outside its footprint
+PASS: Ultra city admits residents and charges upkeep once per month
+PASS: Ultra city naturally grows to level 9 with stable original styles
+PASS: Ultra level 9 and population survive save/load
+PASS: Disconnected ultra city loses service and residents
+PASS: Demolishing a far occupied cell removes all nine cells for one fee
+PASS: Ultra 3x3 footprint survives compression across four chunks
+PASS: Ultra levels above nine are rejected when loading
+PASS: Empty towns request both housing and jobs
+PASS: Housing advice reproduces the reported factory growth shortage exactly
+PASS: Worker shortage with spare housing recommends waiting for residents
+PASS: Unemployment requests additional commercial or industrial jobs
+PASS: Full housing with adequate jobs requests more homes
+PASS: One worker below the business threshold reports a shortage
+PASS: Exact employment and happiness thresholds are satisfied
+PASS: Low happiness shows actionable growth advice
+PASS: Advice fixture has packed offscreen buildings
+PASS: Disconnected 2x2 buildings count once without unpacking them for the HUD
+PASS: Advice refreshes after construction and demolition
+All 664 checks passed.

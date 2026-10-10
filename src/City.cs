@@ -2,12 +2,34 @@ using System.Text.Json;
 
 namespace GrowUpTown;
 
-public enum TileKind { Empty, Road, Home, Shop, Factory, Park, Bulldoze, Water, SuperMixed, SuperFactory, SuperIndustryCommerce, SuperHome, UltraCity, GrandPark, Supermarket, LogisticsCenter }
+// Shipyard is the auto factory's legacy save identifier; keep its enum value and service fields stable.
+public enum TileKind { Empty, Road, Home, Shop, Factory, Park, Bulldoze, Water, SuperMixed, SuperFactory, SuperIndustryCommerce, SuperHome, UltraCity, GrandPark, Supermarket, LogisticsCenter, Rail, Station, Forest, Aquarium, FerrisWheel, RoboticsLab, ConcertHall, ShoppingMall, SpaceCenter, Zoo, AmusementPark, RocketLaunchSite, HotSpringResort, Stadium, Shipyard, SafariPark, CasinoResort, FutureEnergyBase, MarineResort, ExpoVenue, MechaArsenal }
 public sealed class Tile
 {
     public TileKind Kind { get; set; }
+    public bool RailCrossing { get; set; }
+    public bool RailActive { get; set; }
+    public bool RailAccess { get; set; }
+    public int StationStyle { get; set; }
+    public int StationRotation { get; set; }
+    // Null in older saves: use the side opposite the platform.
+    public int? StationEntranceSide { get; set; }
     public int Level { get; set; } = 1;
     public int Residents { get; set; }
+    public bool MallAccess { get; set; }
+    public bool SpaceAccess { get; set; }
+    public bool AmusementAccess { get; set; }
+    public bool LaunchAccess { get; set; }
+    public bool StadiumAccess { get; set; }
+    public bool ShipyardAccess { get; set; }
+    public bool CasinoAccess { get; set; }
+    public bool EnergyAccess { get; set; }
+    public bool ExpoAccess { get; set; }
+    public bool ArsenalAccess { get; set; }
+    public int LandmarkStyle { get; set; }
+    public int LandmarkRotation { get; set; }
+    public bool FerrisWheelAccess { get; set; }
+    public bool RoboticsAccess { get; set; }
     public int LogisticsStyle { get; set; }
     public int LogisticsRotation { get; set; }
     public bool LogisticsAccess { get; set; }
@@ -17,6 +39,8 @@ public sealed class Tile
     public bool MarketAccess { get; set; }
     public int ParkStyle { get; set; }
     public int ParkRotation { get; set; }
+    public int ForestStyle { get; set; }
+    public int ForestRotation { get; set; }
     public int Growth { get; set; }
     public bool Connected { get; set; }
     public int Comfort { get; set; }
@@ -26,9 +50,21 @@ public sealed class Tile
     public bool IsAnchor => OffsetX == 0 && OffsetZ == 0;
     // Four faces per completed floor: +Z, +X, -Z, -X.
     public int[] FaceStyles { get; set; } = [];
+    internal Tile Snapshot() { var copy = (Tile)MemberwiseClone(); copy.FaceStyles = (int[])FaceStyles.Clone(); return copy; }
+    internal void ApplyNetwork(Tile source)
+    {
+        Connected = source.Connected; RailActive = source.RailActive; Comfort = source.Comfort;
+        RailAccess = source.RailAccess; MarketAccess = source.MarketAccess; LogisticsAccess = source.LogisticsAccess;
+        FerrisWheelAccess = source.FerrisWheelAccess; RoboticsAccess = source.RoboticsAccess;
+        MallAccess = source.MallAccess; SpaceAccess = source.SpaceAccess;
+        AmusementAccess = source.AmusementAccess; LaunchAccess = source.LaunchAccess;
+        StadiumAccess = source.StadiumAccess; ShipyardAccess = source.ShipyardAccess;
+        CasinoAccess = source.CasinoAccess; EnergyAccess = source.EnergyAccess;
+        ExpoAccess = source.ExpoAccess; ArsenalAccess = source.ArsenalAccess;
+    }
 }
 
-public sealed class City
+public sealed partial class City
 {
     public const int Size = 24;
     public long LandPrice => 1_000_000L + (chunks.Count - 1L) * 500_000L;
@@ -59,17 +95,23 @@ public sealed class City
     public long Workers => Population * 55 / 100;
     public long Employed => Math.Min(Workers, Jobs);
     public long Balance => LastIncome - LastExpense;
-    public static int Cost(TileKind kind) => kind switch { TileKind.LogisticsCenter => 8400, TileKind.Supermarket => 7200, TileKind.GrandPark => 5600, TileKind.UltraCity => 18000, TileKind.SuperHome => 4800, TileKind.SuperIndustryCommerce => 6200, TileKind.SuperMixed => 4280, TileKind.SuperFactory => 3600, TileKind.Road => 60, TileKind.Home => 420, TileKind.Shop => 650, TileKind.Factory => 900, TileKind.Park => 280, TileKind.Water => 280, TileKind.Bulldoze => 40, _ => 0 };
-    public static string Name(TileKind kind) => kind switch { TileKind.LogisticsCenter => "物流センター", TileKind.Supermarket => "スーパーマーケット", TileKind.GrandPark => "大公園", TileKind.UltraCity => "ultra住宅地＆商業地＆工業地", TileKind.SuperHome => "super住宅地", TileKind.SuperIndustryCommerce => "super工業商業地", TileKind.SuperMixed => "super住宅商業地", TileKind.SuperFactory => "super工業地", TileKind.Road => "道路", TileKind.Home => "住宅", TileKind.Shop => "商業地", TileKind.Factory => "工業地", TileKind.Park => "公園", TileKind.Water => "水域", TileKind.Bulldoze => "撤去", _ => "空き地" };
-    public static int Footprint(TileKind kind) => kind is TileKind.GrandPark or TileKind.Supermarket or TileKind.LogisticsCenter ? 4 : kind == TileKind.UltraCity ? 3 : kind is TileKind.SuperHome or TileKind.SuperMixed or TileKind.SuperFactory or TileKind.SuperIndustryCommerce ? 2 : 1;
-    public static int MaxLevel(TileKind kind) => kind is TileKind.GrandPark or TileKind.Supermarket or TileKind.LogisticsCenter ? 1 : kind == TileKind.UltraCity ? 9 : Footprint(kind) == 2 ? 6 : 3;
+    public static int Cost(TileKind kind) => kind switch { TileKind.MarineResort => 96000, TileKind.ExpoVenue => 108000, TileKind.MechaArsenal => 126000, TileKind.SafariPark => 64000, TileKind.CasinoResort => 72000, TileKind.FutureEnergyBase => 84000, TileKind.HotSpringResort => 42000, TileKind.Stadium => 48000, TileKind.Shipyard => 56000, TileKind.Zoo => 28000, TileKind.AmusementPark => 32000, TileKind.RocketLaunchSite => 38000, TileKind.ConcertHall => 18000, TileKind.ShoppingMall => 22000, TileKind.SpaceCenter => 26000, TileKind.Aquarium => 12000, TileKind.FerrisWheel => 14000, TileKind.RoboticsLab => 16000, TileKind.Forest => 420, TileKind.Rail => 100, TileKind.Station => 4800, TileKind.LogisticsCenter => 8400, TileKind.Supermarket => 7200, TileKind.GrandPark => 5600, TileKind.UltraCity => 18000, TileKind.SuperHome => 4800, TileKind.SuperIndustryCommerce => 6200, TileKind.SuperMixed => 4280, TileKind.SuperFactory => 3600, TileKind.Road => 60, TileKind.Home => 420, TileKind.Shop => 650, TileKind.Factory => 900, TileKind.Park => 280, TileKind.Water => 280, TileKind.Bulldoze => 40, _ => 0 };
+    public static string Name(TileKind kind) => kind switch { TileKind.MarineResort => "海洋リゾート", TileKind.ExpoVenue => "万博会場", TileKind.MechaArsenal => "超巨大メカ工廠", TileKind.SafariPark => "サファリパーク", TileKind.CasinoResort => "カジノリゾート", TileKind.FutureEnergyBase => "未来エネルギー基地", TileKind.HotSpringResort => "温泉リゾート", TileKind.Stadium => "大型スタジアム", TileKind.Shipyard => "自動車工場", TileKind.Zoo => "動物園", TileKind.AmusementPark => "遊園地", TileKind.RocketLaunchSite => "ロケット発射場", TileKind.ConcertHall => "コンサートホール", TileKind.ShoppingMall => "ショッピングモール", TileKind.SpaceCenter => "宇宙開発センター", TileKind.Aquarium => "巨大水族館", TileKind.FerrisWheel => "大観覧車", TileKind.RoboticsLab => "ロボット研究所", TileKind.Forest => "森林", TileKind.Rail => "線路", TileKind.Station => "駅", TileKind.LogisticsCenter => "物流センター", TileKind.Supermarket => "スーパーマーケット", TileKind.GrandPark => "大公園", TileKind.UltraCity => "ultra住宅地＆商業地＆工業地", TileKind.SuperHome => "super住宅地", TileKind.SuperIndustryCommerce => "super工業商業地", TileKind.SuperMixed => "super住宅商業地", TileKind.SuperFactory => "super工業地", TileKind.Road => "道路", TileKind.Home => "住宅", TileKind.Shop => "商業地", TileKind.Factory => "工業地", TileKind.Park => "公園", TileKind.Water => "水域", TileKind.Bulldoze => "撤去", _ => "空き地" };
+    public static int Footprint(TileKind kind) => LandmarkAppearance.IsTenCellLandmark(kind) ? 10 : LandmarkAppearance.IsNineCellLandmark(kind) ? 9 : LandmarkAppearance.IsMegaLandmark(kind) ? 8 : LandmarkAppearance.IsGiantLandmark(kind) ? 7 : LandmarkAppearance.IsLargeLandmark(kind) ? 6 : LandmarkAppearance.IsLandmark(kind) ? 5 : kind is TileKind.GrandPark or TileKind.Supermarket or TileKind.LogisticsCenter ? 4 : kind == TileKind.UltraCity ? 3 : kind is TileKind.Station or TileKind.SuperHome or TileKind.SuperMixed or TileKind.SuperFactory or TileKind.SuperIndustryCommerce ? 2 : 1;
+    public static int MaxLevel(TileKind kind) => LandmarkAppearance.IsLandmark(kind) ? 1 : kind is TileKind.Forest or TileKind.Station or TileKind.Rail or TileKind.GrandPark or TileKind.Supermarket or TileKind.LogisticsCenter ? 1 : kind == TileKind.UltraCity ? 9 : Footprint(kind) == 2 ? 6 : 3;
     public static bool HasHomes(TileKind kind) => kind is TileKind.Home or TileKind.SuperMixed or TileKind.SuperHome or TileKind.UltraCity;
     public static int Housing(Tile tile) => tile.Level * (tile.Kind == TileKind.UltraCity ? 432 : tile.Kind == TileKind.SuperHome ? 192 : tile.Kind == TileKind.SuperMixed ? 96 : tile.Kind == TileKind.Home ? 24 : 0);
-    public static int UnlockYear(TileKind kind) => kind switch
+    public static bool IsSpecial(TileKind kind) => LandmarkAppearance.IsLandmark(kind) || kind is TileKind.GrandPark or TileKind.Supermarket or TileKind.LogisticsCenter;
+    public static int SpecialUnlockYear(int footprint) => 30 + (footprint - 4) * 5;
+    public static readonly int MaxFootprint = Enum.GetValues<TileKind>().Max(Footprint);
+    public static int UnlockYear(TileKind kind) => IsSpecial(kind) ? SpecialUnlockYear(Footprint(kind)) : kind switch
     {
-        TileKind.SuperMixed or TileKind.SuperFactory or TileKind.SuperIndustryCommerce or TileKind.SuperHome => 5,
-        TileKind.UltraCity => 10,
-        TileKind.GrandPark or TileKind.Supermarket or TileKind.LogisticsCenter => 15,
+        TileKind.SuperMixed => 10,
+        TileKind.SuperFactory => 15,
+        TileKind.SuperIndustryCommerce => 12,
+        TileKind.SuperHome => 20,
+        TileKind.UltraCity => 50,
+        TileKind.Forest or TileKind.Rail or TileKind.Station => 40,
         _ => 1
     };
     public bool IsUnlocked(TileKind kind) => (Month - 1) / 12 + 1 >= UnlockYear(kind);
@@ -79,18 +121,18 @@ public sealed class City
     public Tile BuildingAt(int x, int z) { var p = AnchorAt(x, z); return this[p.X, p.Z]; }
     public bool CanBuild(int x, int z, TileKind kind)
     {
-        if (kind is < TileKind.Road or > TileKind.LogisticsCenter || !IsUnlocked(kind) || Money < Cost(kind) || !Inside(x, z)) return false;
+        if (kind is < TileKind.Road or > TileKind.MechaArsenal || !IsUnlocked(kind) || Money < Cost(kind) || !Inside(x, z)) return false;
         if (kind == TileKind.Bulldoze) return this[x, z].Kind != TileKind.Empty;
         for (int dz = 0; dz < Footprint(kind); dz++) for (int dx = 0; dx < Footprint(kind); dx++)
-            if (!Inside(x + dx, z + dz) || (this[x + dx, z + dz].Kind != TileKind.Empty && !(kind == TileKind.Road && this[x + dx, z + dz].Kind == TileKind.Water))) return false;
-        return true;
+            if (!Inside(x + dx, z + dz) || !CanReplace(this[x + dx, z + dz], kind)) return false;
+        return kind != TileKind.Station || StationTrackSides(x, z) != 0;
     }
     public bool Inside(int x, int z) => chunks.ContainsKey(ChunkPos.FromTile(x, z));
     // 1: east/west deck, 2: north/south deck. Recomputed when neighbors change.
     public int BridgeAxis(int x, int z)
     {
-        if (this[x, z].Kind != TileKind.Road) return 0;
-        int mask = RoadMask(x, z);
+        if (this[x, z].Kind is not (TileKind.Road or TileKind.Rail)) return 0;
+        int mask = this[x, z].Kind == TileKind.Rail ? RailMask(x, z) : RoadMask(x, z);
         if (mask == 10 && this[x, z - 1].Kind == TileKind.Water && this[x, z + 1].Kind == TileKind.Water) return 1;
         if (mask == 5 && this[x - 1, z].Kind == TileKind.Water && this[x + 1, z].Kind == TileKind.Water) return 2;
         return 0;
@@ -157,6 +199,7 @@ public sealed class City
     }
     public void Reconnect()
     {
+        if (DeferredUpdates) StopBackgroundUpdates();
         var placed = PlacedCells().ToArray();
         foreach (var (_, _, tile) in placed) tile.Connected = false;
         var queue = new Queue<(int x, int z)>();
@@ -169,6 +212,7 @@ public sealed class City
                 tile.Connected = true;
                 if (tile.Kind == TileKind.Road) queue.Enqueue(n);
             }
+        ReconnectRail();
         // Walkways carry access only between parks, never into another road network
         // or into residential/business buildings. Grand parks participate via all cells.
         foreach (var (x, z, tile) in placed)
@@ -187,6 +231,19 @@ public sealed class City
         {
             if (!tile.IsAnchor) tile.Connected = BuildingAt(x, z).Connected;
             if (tile.IsAnchor && HasHomes(tile.Kind)) tile.Comfort = LocalComfort(x, z);
+            if (tile.IsAnchor) tile.MallAccess = CommercialTaxBase(tile) > 0 && HasMallService(x, z);
+            if (tile.IsAnchor) tile.AmusementAccess = CommercialTaxBase(tile) > 0 && HasAmusementService(x, z);
+            if (tile.IsAnchor) tile.StadiumAccess = CommercialTaxBase(tile) > 0 && HasStadiumService(x, z);
+            if (tile.IsAnchor) tile.CasinoAccess = CommercialTaxBase(tile) > 0 && HasCasinoService(x, z);
+            if (tile.IsAnchor) tile.ExpoAccess = CommercialTaxBase(tile) > 0 && HasExpoService(x, z);
+            if (tile.IsAnchor) tile.ArsenalAccess = IndustrialTaxBase(tile) > 0 && HasArsenalService(x, z);
+            if (tile.IsAnchor) tile.EnergyAccess = IndustrialTaxBase(tile) > 0 && HasEnergyService(x, z);
+            if (tile.IsAnchor) tile.ShipyardAccess = IndustrialTaxBase(tile) > 0 && HasShipyardService(x, z);
+            if (tile.IsAnchor) tile.LaunchAccess = IndustrialTaxBase(tile) > 0 && HasLaunchService(x, z);
+            if (tile.IsAnchor) tile.SpaceAccess = IndustrialTaxBase(tile) > 0 && HasSpaceService(x, z);
+            if (tile.IsAnchor) tile.FerrisWheelAccess = CommercialTaxBase(tile) > 0 && HasFerrisWheelService(x, z);
+            if (tile.IsAnchor) tile.RoboticsAccess = IndustrialTaxBase(tile) > 0 && HasRoboticsService(x, z);
+            if (tile.IsAnchor) tile.RailAccess = CommercialTaxBase(tile) > 0 && HasRailService(x, z);
             if (tile.IsAnchor) tile.MarketAccess = CommercialTaxBase(tile) > 0 && HasMarketService(x, z);
             if (tile.IsAnchor) tile.LogisticsAccess = CommercialTaxBase(tile) + IndustrialTaxBase(tile) > 0 && HasLogisticsService(x, z);
         }
@@ -197,33 +254,47 @@ public sealed class City
         if (!IsUnlocked(kind)) return $"この項目は{UnlockYear(kind)}年1月に解放されます";
         if (!Inside(x, z)) return "未購入の土地には建設できません";
         var tile = this[x, z];
-        if (kind is < TileKind.Road or > TileKind.LogisticsCenter) return "建設する種類を選択してください";
+        if (kind is < TileKind.Road or > TileKind.MechaArsenal) return "建設する種類を選択してください";
         if (kind == TileKind.Bulldoze && tile.Kind == TileKind.Empty) return "ここは空き地です";
-        if (kind != TileKind.Bulldoze && tile.Kind != TileKind.Empty && !(kind == TileKind.Road && tile.Kind == TileKind.Water)) return "既存の建物を先に撤去してください";
+        if (kind != TileKind.Bulldoze && !CanReplace(tile, kind)) return "既存の建物を先に撤去してください";
         if (Money < Cost(kind)) return "資金が足りません。税収を待つか、支出を見直しましょう";
+        if (kind == TileKind.Station && StationTrackSides(x, z) == 0)
+            return "駅には、いずれかの辺に沿う直線線路が2マス必要です（カーブ・分岐・交差・終端は不可）";
         if (!CanBuild(x, z, kind)) return $"建設には所有地内の空いた{Footprint(kind)}×{Footprint(kind)}マスが必要です";
-        SynchronizeAll();
+        if (!DeferredUpdates) SynchronizeAll();
+        else SynchronizeEdit(x, z, kind);
         if (kind == TileKind.Bulldoze) (x, z) = AnchorAt(x, z);
         tile = this[x, z];
         RegisterFaces(tile.Kind, tile.FaceStyles, -1);
         Money -= Cost(kind);
+        bool crossing = (kind == TileKind.Rail && tile.Kind == TileKind.Road) || (kind == TileKind.Road && tile.Kind == TileKind.Rail);
         int size = Footprint(kind == TileKind.Bulldoze ? tile.Kind : kind);
         for (int dz = 0; dz < size; dz++) for (int dx = 0; dx < size; dx++)
         {
             var key = ChunkPos.FromTile(x + dx, z + dz);
             int index = LocalIndex(key, x + dx, z + dz);
             if (kind == TileKind.Bulldoze) chunks[key].Cells.Remove(index);
-            else chunks[key].Cells[index] = new Tile { Kind = kind, OffsetX = dx, OffsetZ = dz };
+            else chunks[key].Cells[index] = new Tile { Kind = crossing ? TileKind.Road : kind, RailCrossing = crossing, OffsetX = dx, OffsetZ = dz };
         }
+        if (kind == TileKind.Station) StationAppearance.Assign(this, x, z);
+        if (kind == TileKind.Forest) ForestAppearance.Assign(this, x, z);
+        if (LandmarkAppearance.IsLandmark(kind)) LandmarkAppearance.Assign(this, x, z);
         if (kind == TileKind.GrandPark) GrandParkAppearance.Assign(this, x, z);
         if (kind == TileKind.Supermarket) SupermarketAppearance.Assign(this, x, z);
         if (kind == TileKind.LogisticsCenter) LogisticsAppearance.Assign(this, x, z);
         InvalidateTerrain(x, z, Math.Max(3, size));
-        Reconnect();
+        if (DeferredUpdates)
+        {
+            ScheduleNetworkUpdate();
+            var edited = new HashSet<ChunkPos>();
+            for (int dz = 0; dz < size; dz++) for (int dx = 0; dx < size; dx++) edited.Add(ChunkPos.FromTile(x + dx, z + dz));
+            foreach (var key in edited) chunks[key].Recount();
+        }
+        else Reconnect();
         FacadeStyles.CompleteFloors(this, x, z);
         bool connected = this[x, z].Connected;
-        ReleaseInactive();
-        return kind == TileKind.Bulldoze ? "撤去しました" : $"{Name(kind)}を建設しました" + (connected || kind == TileKind.Water ? "" : " / 最初の道路入口 [0, 12] へ接続してください");
+        if (!DeferredUpdates) ReleaseInactive();
+        return kind == TileKind.Bulldoze ? "撤去しました" : $"{Name(kind)}を建設しました" + (DeferredUpdates ? " / 接続を更新中" : connected || kind is TileKind.Forest or TileKind.Water or TileKind.Rail or TileKind.Station ? "" : " / 最初の道路入口 [0, 12] へ接続してください");
     }
     public int LocalComfort(int x, int z)
     {
@@ -233,6 +304,7 @@ public sealed class City
             if (Math.Abs(dx) + Math.Abs(dz) > 3) continue;
             var t = this[x + dx, z + dz];
             if (t.Kind == TileKind.Park) value += t.Connected ? 10 : 3;
+            if (t.Kind == TileKind.Forest) value += 15;
             if (t.Kind == TileKind.Water) value += 10;
             if (t.Kind is TileKind.Factory or TileKind.SuperFactory or TileKind.SuperIndustryCommerce) value -= 14;
         }
@@ -246,7 +318,14 @@ public sealed class City
             var anchor = AnchorAt(x + dx, z + dz);
             if (parks.Add(anchor)) value += this[anchor.X, anchor.Z].Connected ? 20 : 6;
         }
+        if (HasMarineService(x, z)) value += 25;
+        if (HasSafariService(x, z)) value += 25;
+        if (HasHotSpringService(x, z)) value += 25;
+        if (HasZooService(x, z)) value += 25;
+        if (HasConcertService(x, z)) value += 25;
+        if (HasAquariumService(x, z)) value += 20;
         if (HasMarketService(x, z)) value += 10;
+        if (HasRailService(x, z)) value += 10;
         return Math.Clamp(value, -35, 25);
     }
     // Commercial portion only: mixed-use industrial tax is never boosted.
@@ -264,17 +343,35 @@ public sealed class City
         TileKind.UltraCity => 960,
         _ => 0
     });
+    public bool HasMarineService(int x, int z) => HasService(x, z, TileKind.MarineResort, 10);
+    public bool HasExpoService(int x, int z) => HasService(x, z, TileKind.ExpoVenue, 10);
+    public bool HasArsenalService(int x, int z) => HasService(x, z, TileKind.MechaArsenal, 10);
+    public bool HasSafariService(int x, int z) => HasService(x, z, TileKind.SafariPark, 9);
+    public bool HasCasinoService(int x, int z) => HasService(x, z, TileKind.CasinoResort, 9);
+    public bool HasEnergyService(int x, int z) => HasService(x, z, TileKind.FutureEnergyBase, 9);
+    public bool HasHotSpringService(int x, int z) => HasService(x, z, TileKind.HotSpringResort, 8);
+    public bool HasStadiumService(int x, int z) => HasService(x, z, TileKind.Stadium, 8);
+    public bool HasShipyardService(int x, int z) => HasService(x, z, TileKind.Shipyard, 8);
+    public bool HasZooService(int x, int z) => HasService(x, z, TileKind.Zoo, 7);
+    public bool HasAmusementService(int x, int z) => HasService(x, z, TileKind.AmusementPark, 7);
+    public bool HasLaunchService(int x, int z) => HasService(x, z, TileKind.RocketLaunchSite, 7);
+    public bool HasConcertService(int x, int z) => HasService(x, z, TileKind.ConcertHall, 6);
+    public bool HasMallService(int x, int z) => HasService(x, z, TileKind.ShoppingMall, 6);
+    public bool HasSpaceService(int x, int z) => HasService(x, z, TileKind.SpaceCenter, 6);
+    public bool HasAquariumService(int x, int z) => HasService(x, z, TileKind.Aquarium);
+    public bool HasFerrisWheelService(int x, int z) => HasService(x, z, TileKind.FerrisWheel);
+    public bool HasRoboticsService(int x, int z) => HasService(x, z, TileKind.RoboticsLab);
     public bool HasMarketService(int x, int z) => HasService(x, z, TileKind.Supermarket);
     public bool HasLogisticsService(int x, int z) => HasService(x, z, TileKind.LogisticsCenter);
-    private bool HasService(int x, int z, TileKind source)
+    private bool HasService(int x, int z, TileKind source, int range = 5)
     {
         (x, z) = AnchorAt(x, z);
         int size = Footprint(this[x, z].Kind);
-        for (int dz = -5; dz < size + 5; dz++) for (int dx = -5; dx < size + 5; dx++)
+        for (int dz = -range; dz < size + range; dz++) for (int dx = -range; dx < size + range; dx++)
         {
             int distance = Math.Max(0, Math.Max(-dx, dx - size + 1)) + Math.Max(0, Math.Max(-dz, dz - size + 1));
-            if (distance <= 5 && this[x + dx, z + dz].Kind == source
-                && BuildingAt(x + dx, z + dz).Connected) return true;
+            if (distance <= range && this[x + dx, z + dz].Kind == source
+                && (source == TileKind.Station ? BuildingAt(x + dx, z + dz).RailActive : BuildingAt(x + dx, z + dz).Connected)) return true;
         }
         return false;
     }
@@ -392,7 +489,7 @@ public sealed class City
             if (!city.chunks.TryAdd(key, chunk)) throw new InvalidDataException("区画が重複しています");
             foreach (var (index, t) in record.Cells)
             {
-                if (index < 0 || index >= Size * Size || t is null || t.Kind < TileKind.Road || (t.Kind > TileKind.LogisticsCenter || t.Kind == TileKind.Bulldoze) || t.Level < 1 || t.Level > MaxLevel(t.Kind) || t.Residents < 0 || t.Residents > Housing(t) || t.OffsetX < 0 || t.OffsetX >= Footprint(t.Kind) || t.OffsetZ < 0 || t.OffsetZ >= Footprint(t.Kind) || (!t.IsAnchor && (t.Residents != 0 || t.Growth != 0 || t.Level != 1)) || t.Growth < 0 || t.Growth >= 6 || !FacadeStyles.IsValid(t) || !GrandParkAppearance.IsValid(t) || !SupermarketAppearance.IsValid(t) || !LogisticsAppearance.IsValid(t))
+                if (index < 0 || index >= Size * Size || t is null || t.Kind < TileKind.Road || (t.Kind > TileKind.MechaArsenal || t.Kind == TileKind.Bulldoze) || t.Level < 1 || t.Level > MaxLevel(t.Kind) || t.Residents < 0 || t.Residents > Housing(t) || t.OffsetX < 0 || t.OffsetX >= Footprint(t.Kind) || t.OffsetZ < 0 || t.OffsetZ >= Footprint(t.Kind) || (!t.IsAnchor && (t.Residents != 0 || t.Growth != 0 || t.Level != 1)) || t.Growth < 0 || t.Growth >= 6 || !FacadeStyles.IsValid(t) || !GrandParkAppearance.IsValid(t) || !SupermarketAppearance.IsValid(t) || !LogisticsAppearance.IsValid(t) || !LandmarkAppearance.IsValid(t) || !ForestAppearance.IsValid(t) || !StationAppearance.IsValid(t) || (t.RailCrossing && t.Kind != TileKind.Road))
                     throw new InvalidDataException("建物の保存データが正しくありません");
                 chunk.Cells.Add(index, t);
                 city.RegisterFaces(t.Kind, t.FaceStyles);

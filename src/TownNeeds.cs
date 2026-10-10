@@ -42,7 +42,7 @@ internal static class TownNeeds
         if (disconnected > 0)
             growth = new("道路の接続が必要です", $"道路未接続の建物：{disconnected:N0}棟", "入口 [0, 12] へ道路をつなぐ", true);
         else if (happiness < 60)
-            growth = new("幸福度を上げましょう", $"現在{happiness}% / 発展には60%以上", "税率・公園・住宅付近の工場を確認", true);
+            growth = new("幸福度を上げましょう", $"現在{happiness}% / 発展には60%以上", "税率・公園・森林・住宅付近の工場を確認", true);
         else
             growth = new("幸福度は良好です", $"現在{happiness}% / 発展の基準60%以上", "建物は条件を6か月続けると成長", false);
         return [housing, work, growth];

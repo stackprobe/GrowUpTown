@@ -29,7 +29,7 @@ internal static class LogisticsAppearance
             if (City.HasHomes(t.Kind)) homes++;
             if (t.Kind is TileKind.Shop or TileKind.SuperMixed or TileKind.SuperIndustryCommerce or TileKind.UltraCity or TileKind.Supermarket) shops++;
             if (t.Kind is TileKind.Factory or TileKind.SuperFactory or TileKind.SuperIndustryCommerce or TileKind.UltraCity) industry++;
-            if (t.Kind is TileKind.Park or TileKind.GrandPark || (t.Kind == TileKind.Empty && city.Inside(x + dx, z + dz) && city.HasNaturalTree(x + dx, z + dz))) green++;
+            if (t.Kind is TileKind.Forest or TileKind.Park or TileKind.GrandPark || (t.Kind == TileKind.Empty && city.Inside(x + dx, z + dz) && city.HasNaturalTree(x + dx, z + dz))) green++;
             if (t.Kind == TileKind.Road)
             {
                 if (dz == 4 && dx is >= 0 and < 4) roads[0]++;
