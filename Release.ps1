@@ -1,11 +1,11 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 .SYNOPSIS
 Builds a self-contained Windows x64 release and creates out/GrowUpTown.zip.
 .DESCRIPTION
 Run with: powershell -NoProfile -ExecutionPolicy Bypass -File .\Release.ps1
 Requires the .NET SDK and access to NuGet packages.
-The archive contains the application at its root and documentation under doc/.
+The archive contains the application and launcher at its root and documentation under doc/.
 An existing archive is replaced only after publishing and compression succeed.
 #>
 [CmdletBinding()]
@@ -16,6 +16,7 @@ $ErrorActionPreference = 'Stop'
 
 $solution = Join-Path $PSScriptRoot 'src\GrowUpTown.sln'
 $documents = Join-Path $PSScriptRoot 'doc'
+$launcher = Join-Path $PSScriptRoot '_ゲームスタート.bat'
 $outputDirectory = Join-Path $PSScriptRoot 'out'
 $archive = Join-Path $outputDirectory 'GrowUpTown.zip'
 
@@ -26,6 +27,9 @@ try {
     }
     if (-not (Test-Path -LiteralPath $documents -PathType Container)) {
         throw "Documentation directory not found: $documents"
+    }
+    if (-not (Test-Path -LiteralPath $launcher -PathType Leaf)) {
+        throw "Launcher not found: $launcher"
     }
 
     New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
@@ -47,6 +51,7 @@ try {
             throw 'The published GrowUpTown.exe was not found.'
         }
 
+        Copy-Item -LiteralPath $launcher -Destination $publishDirectory -Force
         Copy-Item -LiteralPath $documents -Destination (Join-Path $publishDirectory 'doc') -Recurse -Force
         Add-Type -AssemblyName System.IO.Compression.FileSystem
         [System.IO.Compression.ZipFile]::CreateFromDirectory(
